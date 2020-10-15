@@ -124,12 +124,50 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
         } else if (methodRequirement instanceof MethodRequirement.CollectionMethod) {
             return Stream.of(
-                    //generateCollectionSerializer(((MethodRequirement.CollectionMethod) methodRequirement)),
-                    //generateCollectionUnserializer(((MethodRequirement.CollectionMethod) methodRequirement))
+                    generateCollectionSerializer(((MethodRequirement.CollectionMethod) methodRequirement)),
+                    generateCollectionUnserializer(((MethodRequirement.CollectionMethod) methodRequirement))
             );
 
         } else
             throw new UnsupportedOperationException(methodRequirement.toString());
+    }
+
+    private MethodSpec generateCollectionSerializer(MethodRequirement.CollectionMethod methodRequirement) {
+        CollectionClassRepr forType = methodRequirement.getForType();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
+                .returns(void.class)
+                .addParameter(TypeName.get(forType.getOriginal()), "value")
+                .addParameter(byteBuf, "acc");
+
+        builder.addStatement("acc.writeInt(value.size())");
+
+        TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
+        builder.beginControlFlow("for ($T e :value)", elementTypeName);
+        builder.addStatement("serialize" + forType.getElementType().getSimpleName() + "Generic(e,acc)");
+        builder.endControlFlow();
+
+        return builder.build();
+    }
+
+    private MethodSpec generateCollectionUnserializer(MethodRequirement.CollectionMethod methodRequirement) {
+        CollectionClassRepr forType = methodRequirement.getForType();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
+                .returns(TypeName.get(forType.getOriginal()))
+                .addParameter(byteBuf, "buf");
+
+        builder.addStatement("int size = buf.readInt()");
+        builder.addStatement(forType.getConcreteBuilder());
+
+        builder.beginControlFlow("for (int i=0;i<size;i++)");
+        builder.addStatement("$T e = unserialize" + forType.getElementType().getSimpleName() + "Generic(buf)", TypeName.get(forType.getElementType().getOriginal()));
+        builder.addStatement("value.add(e)");
+        builder.endControlFlow();
+
+        builder.addStatement("return " + forType.getConcreteFinalizer());
+
+        return builder.build();
     }
 
     private MethodSpec generateMapSerializer(MethodRequirement.MapMethod methodRequirement) {

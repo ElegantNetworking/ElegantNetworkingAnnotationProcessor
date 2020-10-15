@@ -1,13 +1,17 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import lombok.Value;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -16,6 +20,8 @@ import static hohserg.elegant.networking.annotation.processor.ElegantPacketProce
 @Value
 public class CollectionClassRepr implements ClassRepr {
     String name;
+    String concreteBuilder;
+    String concreteFinalizer;
     ClassRepr elementType;
     Set<Modifier> modifiers;
     TypeMirror original;
@@ -30,17 +36,20 @@ public class CollectionClassRepr implements ClassRepr {
         return ImmutableSet.of(elementType);
     }
 
-    static Set<String> specials = ImmutableSet.of(
-            java.util.Set.class.getName(),
-            java.util.List.class.getName(),
-            java.util.Collection.class.getName()
+    static Map<String, Pair<String, String>> specials = ImmutableMap.of(
+            java.util.Set.class.getName(), Pair.of("java.util.HashSet value = new java.util.HashSet()", "value"),
+            java.util.List.class.getName(), Pair.of("java.util.ArrayList value = new java.util.ArrayList()", "value"),
+            java.util.Collection.class.getName(), Pair.of("java.util.ArrayList value = new java.util.ArrayList()", "value"),
+            ImmutableList.class.getName(), Pair.of("ImmutableList.Builder value = ImmutableList.builder()", "value.build()")
     );
 
     static Optional<ClassRepr> prepare(TypeMirror type) {
-        Optional<String> maybeSpecial = specials.stream().filter(type.toString()::startsWith).findAny();
+        Optional<String> maybeSpecial = specials.keySet().stream().filter(type.toString()::startsWith).findAny();
         return maybeSpecial
                 .map(name1 -> new CollectionClassRepr(
                         name1,
+                        specials.get(name1).getLeft(),
+                        specials.get(name1).getRight(),
                         ClassRepr.typeRepresentation(((DeclaredType) type).getTypeArguments().get(0)),
                         typeUtils.asElement(type).getModifiers(),
                         type));
