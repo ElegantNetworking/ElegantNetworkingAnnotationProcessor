@@ -1,5 +1,8 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.Value;
 import lombok.experimental.Wither;
 
@@ -10,6 +13,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Value
@@ -18,12 +22,12 @@ public class FieldRepr {
     VariableElement element;
     List<? extends AnnotationMirror> annotations;
     String name;
-    TypeMirror type;
+    TypeMirror originalType;
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Getter(lazy = true)
+    ClassRepr type = ClassRepr.typeRepresentation(originalType);
     Set<Modifier> modifiers;
-
-    public ClassRepr typeRepresentation(Types typeUtils) {
-        return ClassRepr.prepare((TypeElement) typeUtils.asElement(type));
-    }
 
 
     public static FieldRepr prepare(VariableElement element) {

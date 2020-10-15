@@ -1,31 +1,62 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
-import lombok.Value;
-import lombok.experimental.Wither;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
-import javax.lang.model.element.*;
-import java.util.List;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.note;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
+import static hohserg.elegant.networking.annotation.processor.dom.PrimitiveClassRepr.boxedPrimitives;
 
-import static java.util.stream.Collectors.toList;
+public interface ClassRepr {
+    String getName();
 
-@Value
-@Wither
-public class ClassRepr {
-    TypeElement element;
-    List<? extends AnnotationMirror> annotations;
-    String name;
-    List<FieldRepr> fields;
-    List<MethodRepr> methods;
-    List<MethodRepr> constructors;
+    String getSimpleName();
 
-    public static ClassRepr prepare(TypeElement typeElement) {
-        return new ClassRepr(
-                typeElement,
-                typeElement.getAnnotationMirrors(),
-                typeElement.getQualifiedName().toString(),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.FIELD).map(e -> ((VariableElement) e)).map(FieldRepr::prepare).collect(toList()),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.METHOD).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList()),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.CONSTRUCTOR).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList())
-        );
+    Set<ClassRepr> getEnclosingTypes();
+
+    TypeMirror getOriginal();
+
+
+    Set<Modifier> getModifiers();
+
+    class CacheHolder {
+        private static Map<String, ClassRepr> cache = new HashMap<>();
+    }
+
+    static ClassRepr typeRepresentation(TypeMirror type) {
+        note("test " + type + " " + (type instanceof DeclaredType));
+        return CacheHolder.cache.computeIfAbsent(type.toString(), __ -> {
+            if (isPrimitive(type))
+                return new PrimitiveClassRepr(PrimitiveClassRepr.PrimitiveKind.valueOf(unboxIfPossible(type).toString().toUpperCase()), type);
+
+
+            else if (type.getKind() == TypeKind.ARRAY)
+                return new ArrayClassRepr(typeRepresentation(((ArrayType) type).getComponentType()), type);
+
+            else if (type.getKind() == TypeKind.VOID)
+                return VoidClassRepr.instance;
+
+            else {
+                return CollectionClassRepr.prepare(type)
+                        .orElseGet(() -> MapClassRepr.prepare(type)
+                                .orElseGet(() -> DataClassRepr.prepare((TypeElement) typeUtils.asElement(type))));
+            }
+        });
+    }
+
+    static TypeMirror unboxIfPossible(TypeMirror type) {
+        return type.getKind().isPrimitive() ? type : typeUtils.unboxedType(type);
+    }
+
+    static boolean isPrimitive(TypeMirror type) {
+        return type.getKind().isPrimitive() || boxedPrimitives.contains(type.toString());
     }
 }
