@@ -24,7 +24,7 @@ public class CodeGenerator {
 
         ClassName packet = ClassName.get(typeElement.getElement());
         TypeSpec serializer = TypeSpec.classBuilder(typeElement.getSimpleName() + "Serializer")
-                .addAnnotation(AnnotationSpec.builder(ClassName.get("hohserg.elegant.networking.impl", "ElegantPacketSerializer")).addMember("packetClass", packet.canonicalName() + ".class").build())
+                .addAnnotation(AnnotationSpec.builder(ClassName.get("hohserg.elegant.networking.impl", "SerializerMark")).addMember("packetClass", packet.canonicalName() + ".class").build())
                 .addModifiers(PUBLIC)
                 .addSuperinterface(ParameterizedTypeName.get(ClassName.get("hohserg.elegant.networking.impl", "ISerializer"), packet))
                 .addMethod(generateMainSerializeMethod(typeElement, packet))
