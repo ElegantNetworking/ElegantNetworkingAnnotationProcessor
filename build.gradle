@@ -9,8 +9,10 @@ buildscript {
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
 
-group 'hohserg.elegant.networking'
+group 'io.gitlab.hohserg.elegant.networking'
 version '1.0'
 
 sourceCompatibility = 1.8
@@ -33,4 +35,78 @@ shadowJar {
     relocate 'org.apache', 'shadow.org.apache'
 
     minimize()
+    
+    classifier = null
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+    archives shadowJar
+}
+
+
+publishing {
+    repositories {
+        maven {
+            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+            url = releasesRepoUrl
+            credentials {
+                username = "$ossrhUsername"
+                password = "$ossrhPassword"
+            }
+        }
+    }
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId 'annotation-processor'
+
+            artifact sourcesJar
+            artifact javadocJar
+            artifact shadowJar
+
+            pom {
+                name = 'ElegantNetworking Annotation Processor'
+                packaging = 'jar'
+                description = 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
+                url = 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
+
+                scm {
+                    connection = 'scm:git:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
+                    developerConnection = 'scm:git:git@github.com:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
+                    url = 'https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor'
+                }
+
+                licenses {
+                    license {
+                        name = 'GNU Lesser General Public License v3.0'
+                        url = 'https://raw.githubusercontent.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/master/LICENSE.md'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'hohserg'
+                        name = 'hohserg'
+                        email = 'hohserg1@yandex.ru'
+                    }
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
 }
