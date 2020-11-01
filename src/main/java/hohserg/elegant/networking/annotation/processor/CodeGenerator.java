@@ -11,6 +11,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.printDetailsOption;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.Modifier.*;
@@ -33,7 +35,7 @@ public class CodeGenerator {
                 .addMethods(requiredMethods)
                 .build();
 
-        return JavaFile.builder(ElegantPacketProcessor.elementUtils.getPackageOf(typeElement.getElement()).getQualifiedName().toString(), serializer).build();
+        return JavaFile.builder(elementUtils.getPackageOf(typeElement.getElement()).getQualifiedName().toString(), serializer).build();
     }
 
     private static MethodSpec generatePacketIdMethod(DataClassRepr typeElement, int packetId) {
@@ -320,14 +322,16 @@ public class CodeGenerator {
     }
 
     private static Stream<MethodRequirement> getRequirementMethodsForType(ClassRepr classRepr) {
-        ElegantPacketProcessor.note("Generation serializer for " + classRepr);
+        if (options.containsKey(printDetailsOption))
+            note("Generation serializer for " + classRepr.getName());
 
         if (classRepr instanceof DataClassRepr) {
             DataClassRepr dataClassRepr = (DataClassRepr) classRepr;
 
             List<DataClassRepr> sealedImplementations = InheritanceUtils.getAllSealedImplementations(dataClassRepr)
                     .stream().sorted(Comparator.comparing(DataClassRepr::getName)).collect(toList());
-            ElegantPacketProcessor.note(classRepr.getName() + " have implementations: " + sealedImplementations.stream().map(ClassRepr::getName).collect(toSet()));
+            if (options.containsKey(printDetailsOption))
+                note(classRepr.getName() + " have implementations: " + sealedImplementations.stream().map(ClassRepr::getName).collect(toSet()));
 
             return Stream.concat(
                     Stream.of(new MethodRequirement.GenericMethod(dataClassRepr, sealedImplementations)),

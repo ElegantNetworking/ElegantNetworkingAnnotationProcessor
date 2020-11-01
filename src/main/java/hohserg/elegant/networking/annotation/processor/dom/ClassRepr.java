@@ -24,15 +24,15 @@ public interface ClassRepr {
 
     TypeMirror getOriginal();
 
-
     Set<Modifier> getModifiers();
+
 
     class CacheHolder {
         private static Map<String, ClassRepr> cache = new HashMap<>();
     }
 
     static ClassRepr typeRepresentation(TypeMirror type) {
-        note("test " + type + " " + (type instanceof DeclaredType));
+        //note("test " + type + " " + (type instanceof DeclaredType));
         return CacheHolder.cache.computeIfAbsent(type.toString(), __ -> {
             if (isPrimitive(type))
                 return new PrimitiveClassRepr(PrimitiveClassRepr.PrimitiveKind.valueOf(unboxIfPossible(type).toString().toUpperCase()), type);

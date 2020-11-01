@@ -1,5 +1,6 @@
 package hohserg.elegant.networking.annotation.processor;
 
+import com.google.common.collect.ImmutableSet;
 import hohserg.elegant.networking.annotation.processor.dom.*;
 import hohserg.elegant.networking.api.ElegantPacket;
 import lombok.SneakyThrows;
@@ -26,6 +27,7 @@ import static javax.lang.model.element.ElementKind.METHOD;
 
 public class ElegantPacketProcessor extends AbstractProcessor {
 
+    public static String printDetailsOption = "elegantnetworking.printDetails";
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
@@ -34,6 +36,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
         elementUtils = processingEnv.getElementUtils();
         filer = processingEnv.getFiler();
         messager = processingEnv.getMessager();
+        options = processingEnv.getOptions();
     }
 
     @SneakyThrows
@@ -47,7 +50,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
                 if (annotatedElement.getModifiers().contains(Modifier.PUBLIC)) {
                     if (havePacketInterfaces(typeElement)) {
                         currentElement = typeElement;
-                        note(annotatedElement, "Found elegant packet class " + typeElement.getQualifiedName());
+                        note(annotatedElement, "Found elegant packet class" + typeElement.getSimpleName());
 
                         //elementUtils.getAllMembers(typeElement).forEach(e -> note(typeElement, "subelement " + e + e.getModifiers()));
                         //typeElement.getEnclosedElements().forEach(e -> note(typeElement, "subelement " + e));
@@ -64,6 +67,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
         for (int i = 0; i < sortedPackets.size(); i++) {
             int packetId = i + 1;
             TypeElement packet = sortedPackets.get(i);
+            currentElement = packet;
             try {
                 DataClassRepr classRepr = prepare(packet);
                 /*typeElement.getFields().forEach(f -> note(f.getName() + f.getModifiers()));
@@ -72,12 +76,15 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
                 Set<ClassRepr> serializableTypes = getAllSerializableTypes(classRepr).collect(toSet());
 
-                note("Required to serializer follow types: \n\n\n" + serializableTypes.stream().map(Objects::toString).collect(joining("\n")));
+                //note("Required to serializer follow types: \n\n\n" + serializableTypes.stream().map(Objects::toString).collect(joining("\n")));
 
                 generateSerializerSource(classRepr, serializableTypes, packetId)
                         .writeTo(filer);
             } catch (Exception e) {
-                error(packet, "Failure on building serializer: \n" + e + "\n" + Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(joining("\n")));
+                if (options.containsKey(printDetailsOption))
+                    error(packet, "Failure on building serializer: \n" + e + "\n" + Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(joining("\n")));
+                else
+                    error(packet, "Failure on building serializer: " + e.getMessage());
             }
         }
         return false;
@@ -101,7 +108,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
 
         boolean b = elementUtils.getAllMembers(holder).stream().noneMatch(m -> m.getKind() == METHOD && m.getSimpleName().toString().equals(methodName));
-        note("nonExistsMethod " + methodName + " noneMatch " + b);
+        //note("nonExistsMethod " + methodName + " noneMatch " + b);
         return b;
     }
 
@@ -137,9 +144,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        HashSet<String> r = new HashSet<>();
-        r.add(ElegantPacket.class.getCanonicalName());
-        return r;
+        return ImmutableSet.of(ElegantPacket.class.getCanonicalName());
     }
 
     @Override
@@ -147,9 +152,15 @@ public class ElegantPacketProcessor extends AbstractProcessor {
         return SourceVersion.latestSupported();
     }
 
+    @Override
+    public Set<String> getSupportedOptions() {
+        return ImmutableSet.of(printDetailsOption);
+    }
+
     public static Types typeUtils;
     public static Elements elementUtils;
     private Filer filer;
     private static Messager messager;
+    public static Map<String, String> options;
 
 }

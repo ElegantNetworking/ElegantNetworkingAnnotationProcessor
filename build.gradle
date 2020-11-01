@@ -29,6 +29,10 @@ dependencies {
     compile project(':ElegantNetworkingCommon')
 }
 
+jar{
+    baseName 'annotation-processor' //not work
+}
+
 shadowJar {
     relocate 'com.google', 'shadow.com.google'
     relocate 'com.squareup', 'shadow.com.squareup'
