@@ -13,7 +13,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '1.0'
+version '2.0'
 
 sourceCompatibility = 1.8
 
