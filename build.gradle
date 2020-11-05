@@ -9,7 +9,7 @@ buildscript {
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
@@ -58,33 +58,33 @@ artifacts {
     archives javadocJar
     archives shadowJar
 }
+configurations.archives.with {
+    artifacts.remove artifacts.find { it.toString().contains("jar") }
+}
 
+signing {
+    sign sourcesJar
+    sign javadocJar
+    sign shadowJar
+}
 
-publishing {
+uploadArchives {
     repositories {
-        maven {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            url = releasesRepoUrl
-            credentials {
-                username = "$ossrhUsername"
-                password = "$ossrhPassword"
+            repository(url: releasesRepoUrl/*'file://localhost/' + new File(project.getProjectDir(),'repo').getAbsolutePath()*/){
+                authentication userName: "$ossrhUsername", password: "$ossrhPassword"
             }
-        }
-    }
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId 'annotation-processor'
 
-            artifact sourcesJar
-            artifact javadocJar
-            artifact shadowJar
-
-            pom {
-                name = 'ElegantNetworking Annotation Processor'
-                packaging = 'jar'
-                description = 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
-                url = 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
+            pom.artifactId = 'annotation-processor'
+            pom.project {
+                name 'ElegantNetworking Annotation Processor'
+                packaging 'jar'
+                description 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
+                url 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
 
                 scm {
                     connection = 'scm:git:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
@@ -109,8 +109,4 @@ publishing {
             }
         }
     }
-}
-
-signing {
-    sign publishing.publications.mavenJava
 }
