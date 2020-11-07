@@ -32,7 +32,6 @@ public class EnumClassRepr implements ClassRepr {
 
     public static Optional<ClassRepr> prepare(TypeMirror type) {
         TypeMirror enumBaseType = typeUtils.getDeclaredType(elementUtils.getTypeElement(Enum.class.getName()), type);
-        note("test2 " + type + " " + enumBaseType + " " + typeUtils.isSubtype(type, enumBaseType));
         if (typeUtils.isSubtype(type, enumBaseType)) {
             TypeElement typeElement = (TypeElement) typeUtils.asElement(type);
             return Optional.of(new EnumClassRepr(typeElement, typeElement.getQualifiedName().toString(), typeElement.getSimpleName().toString(), typeElement.getModifiers()));

@@ -76,7 +76,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
                 Set<ClassRepr> serializableTypes = getAllSerializableTypes(classRepr).collect(toSet());
 
-                note("test1 " + serializableTypes.stream().map(t -> t.toString()).collect(joining(", ")));
+                //note("test1 " + serializableTypes.stream().map(t -> t.toString()).collect(joining(", ")));
 
                 //note("Required to serializer follow types: \n\n\n" + serializableTypes.stream().map(Objects::toString).collect(joining("\n")));
 
