@@ -102,8 +102,36 @@ public class CodeGenerator {
                     generateCollectionUnserializer(((MethodRequirement.CollectionMethod) methodRequirement))
             );
 
+        } else if (methodRequirement instanceof MethodRequirement.EnumMethod) {
+            return Stream.of(
+                    generateEnumSerializer(((MethodRequirement.EnumMethod) methodRequirement)),
+                    generateEnumUnserializer(((MethodRequirement.EnumMethod) methodRequirement))
+            );
+
         } else
             throw new UnsupportedOperationException(methodRequirement.toString());
+    }
+
+    private static MethodSpec generateEnumSerializer(MethodRequirement.EnumMethod methodRequirement) {
+        EnumClassRepr forType = methodRequirement.getForType();
+
+        return MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
+                .returns(void.class)
+                .addParameter(TypeName.get(forType.getOriginal()), "value")
+                .addParameter(byteBuf, "acc")
+                .addStatement("acc.writeByte(value.ordinal())")
+                .build();
+    }
+
+    private static MethodSpec generateEnumUnserializer(MethodRequirement.EnumMethod methodRequirement) {
+        EnumClassRepr forType = methodRequirement.getForType();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
+                .returns(TypeName.get(forType.getOriginal()))
+                .addParameter(byteBuf, "buf");
+
+        builder.addStatement("return $T.values()[buf.readByte()]", forType.getOriginal());
+        return builder.build();
     }
 
     private static MethodSpec generateCollectionSerializer(MethodRequirement.CollectionMethod methodRequirement) {
@@ -345,6 +373,9 @@ public class CodeGenerator {
 
         } else if (classRepr instanceof CollectionClassRepr) {
             return Stream.of(new MethodRequirement.CollectionMethod((CollectionClassRepr) classRepr));
+
+        } else if (classRepr instanceof EnumClassRepr) {
+            return Stream.of(new MethodRequirement.EnumMethod((EnumClassRepr) classRepr));
 
         } else
             throw new UnsupportedOperationException(classRepr.toString());

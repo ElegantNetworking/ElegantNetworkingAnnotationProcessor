@@ -5,7 +5,6 @@ import hohserg.elegant.networking.annotation.processor.dom.containers.*;
 import lombok.Value;
 
 import java.util.List;
-import java.util.Set;
 
 public interface MethodRequirement {
 
@@ -13,6 +12,11 @@ public interface MethodRequirement {
     class GenericMethod implements MethodRequirement {
         DataClassRepr forType;
         List<DataClassRepr> sealedImplementations;
+    }
+
+    @Value
+    class EnumMethod implements MethodRequirement {
+        EnumClassRepr forType;
     }
 
     @Value
