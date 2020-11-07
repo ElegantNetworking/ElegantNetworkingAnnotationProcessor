@@ -1,6 +1,7 @@
-package hohserg.elegant.networking.annotation.processor.dom;
+package hohserg.elegant.networking.annotation.processor.dom.containers;
 
 import com.google.common.collect.ImmutableSet;
+import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
 import lombok.Value;
 
 import javax.lang.model.element.Modifier;

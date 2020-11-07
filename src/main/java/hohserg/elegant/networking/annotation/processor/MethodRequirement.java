@@ -1,9 +1,7 @@
 package hohserg.elegant.networking.annotation.processor;
 
-import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
-import hohserg.elegant.networking.annotation.processor.dom.CollectionClassRepr;
-import hohserg.elegant.networking.annotation.processor.dom.DataClassRepr;
-import hohserg.elegant.networking.annotation.processor.dom.MapClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.*;
+import hohserg.elegant.networking.annotation.processor.dom.containers.*;
 import lombok.Value;
 
 import java.util.List;

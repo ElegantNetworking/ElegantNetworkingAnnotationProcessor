@@ -2,6 +2,8 @@ package hohserg.elegant.networking.annotation.processor;
 
 import com.squareup.javapoet.*;
 import hohserg.elegant.networking.annotation.processor.dom.*;
+import hohserg.elegant.networking.annotation.processor.dom.containers.CollectionClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;

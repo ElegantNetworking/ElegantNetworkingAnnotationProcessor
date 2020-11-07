@@ -1,12 +1,8 @@
-package hohserg.elegant.networking.annotation.processor.dom;
+package hohserg.elegant.networking.annotation.processor.dom.containers;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.squareup.javapoet.TypeName;
-import hohserg.elegant.networking.annotation.processor.MethodRequirement;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
 import lombok.Value;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -17,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
 
@@ -46,7 +41,7 @@ public class MapClassRepr implements ClassRepr {
             ImmutableMap.class.getName(), Pair.of("ImmutableMap.Builder value = ImmutableMap.builder()", "value.build()")
     );
 
-    static Optional<ClassRepr> prepare(TypeMirror type) {
+    public static Optional<ClassRepr> prepare(TypeMirror type) {
         Optional<String> maybeSpecial = specials.keySet().stream().filter(type.toString()::startsWith).findAny();
         List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
         return maybeSpecial
