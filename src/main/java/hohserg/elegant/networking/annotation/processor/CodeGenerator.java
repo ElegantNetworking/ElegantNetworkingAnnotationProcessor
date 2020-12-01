@@ -1,16 +1,14 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.squareup.javapoet.*;
-import hohserg.elegant.networking.annotation.processor.dom.*;
-import hohserg.elegant.networking.annotation.processor.dom.containers.ArrayClassRepr;
-import hohserg.elegant.networking.annotation.processor.dom.containers.CollectionClassRepr;
-import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.DataClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.FieldRepr;
+import hohserg.elegant.networking.annotation.processor.dom.PrimitiveClassRepr;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
@@ -18,9 +16,9 @@ import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.Modifier.*;
 
 public class CodeGenerator {
-    public static ClassName byteBuf = ClassName.get("io.netty.buffer", "ByteBuf");
+    static ClassName byteBuf = ClassName.get("io.netty.buffer", "ByteBuf");
 
-    public static JavaFile generateSerializerSource(DataClassRepr typeElement, Set<ClassRepr> serializableTypes, int packetId) {
+    static JavaFile generateSerializerSource(DataClassRepr typeElement, Set<ClassRepr> serializableTypes, int packetId) {
         List<MethodSpec> requiredMethods = getRequiredMethods(serializableTypes)
                 .flatMap(methodRequirement -> Stream.of(
                         methodRequirement.generateSerializer(),
@@ -43,7 +41,14 @@ public class CodeGenerator {
         return JavaFile.builder(elementUtils.getPackageOf(typeElement.getElement()).getQualifiedName().toString(), serializer).build();
     }
 
-    public static MethodSpec generatePacketIdMethod(DataClassRepr typeElement, int packetId) {
+    private static Stream<MethodRequirement> getRequiredMethods(Set<ClassRepr> serializableTypes) {
+        if (options.containsKey(printDetailsOption))
+            serializableTypes.forEach(classRepr -> note("Generation serializer for " + classRepr.getName()));
+
+        return serializableTypes.stream().flatMap(ClassRepr::getRequirementMethods).distinct();
+    }
+
+    private static MethodSpec generatePacketIdMethod(DataClassRepr typeElement, int packetId) {
         return MethodSpec.methodBuilder("packetId")
                 .addModifiers(PUBLIC)
                 .returns(int.class)
@@ -51,7 +56,7 @@ public class CodeGenerator {
                 .build();
     }
 
-    public static MethodSpec generateMainSerializeMethod(DataClassRepr typeElement, ClassName packet) {
+    private static MethodSpec generateMainSerializeMethod(DataClassRepr typeElement, ClassName packet) {
         MethodSpec.Builder serialize = MethodSpec.methodBuilder("serialize")
                 .addModifiers(PUBLIC);
 
@@ -66,7 +71,7 @@ public class CodeGenerator {
         return serialize.build();
     }
 
-    public static MethodSpec generateMainUnserializeMethod(DataClassRepr typeElement, ClassName packet) {
+    private static MethodSpec generateMainUnserializeMethod(DataClassRepr typeElement, ClassName packet) {
         MethodSpec.Builder unserialize = MethodSpec.methodBuilder("unserialize")
                 .addModifiers(PUBLIC);
 
@@ -80,19 +85,19 @@ public class CodeGenerator {
         return unserialize.build();
     }
 
-    public static List<FieldRepr> onlySerializableFields(List<FieldRepr> fields) {
+    static List<FieldRepr> onlySerializableFields(List<FieldRepr> fields) {
         return fields.stream().filter(f -> !f.getModifiers().contains(TRANSIENT) && !f.getModifiers().contains(STATIC)).collect(toList());
     }
 
-    public static String getFieldGetAccess(DataClassRepr typeElement, FieldRepr field) {
+    static String getFieldGetAccess(DataClassRepr typeElement, FieldRepr field) {
         return isPrivate(field) ? getterAccess(typeElement, field) : "value." + field.getName();
     }
 
-    public static String getFieldSetAccess(DataClassRepr typeElement, FieldRepr field) {
+    static String getFieldSetAccess(DataClassRepr typeElement, FieldRepr field) {
         return isPrivate(field) ? setterAccess(typeElement, field) : "value." + field.getName() + " = $L";
     }
 
-    public static String getterAccess(DataClassRepr typeElement, FieldRepr field) {
+    private static String getterAccess(DataClassRepr typeElement, FieldRepr field) {
         String capitalized = StringUtils.capitalize(field.getName());
 
         boolean get_accessor = typeElement.getMethods().stream().anyMatch(m -> m.getName().equals("get" + capitalized) && m.getResultType().equals(field.getType()) && m.getArguments().isEmpty());
@@ -108,7 +113,7 @@ public class CodeGenerator {
             throw new IllegalStateException("Private fields must have getters");
     }
 
-    public static String setterAccess(DataClassRepr typeElement, FieldRepr field) {
+    private static String setterAccess(DataClassRepr typeElement, FieldRepr field) {
         String capitalized = StringUtils.capitalize(field.getName());
 
         boolean set_accessor = typeElement.getMethods().stream().anyMatch(m -> m.getName().equals("set" + capitalized) && m.getArguments().size() == 1 && m.getArguments().get(0).equals(field.getType()));
@@ -118,15 +123,7 @@ public class CodeGenerator {
             throw new IllegalStateException("Private non-final fields must have setters");
     }
 
-    public static boolean isPrivate(FieldRepr f) {
+    private static boolean isPrivate(FieldRepr f) {
         return f.getModifiers().contains(PRIVATE);
     }
-
-    public static Stream<MethodRequirement> getRequiredMethods(Set<ClassRepr> serializableTypes) {
-        if (options.containsKey(printDetailsOption))
-            serializableTypes.forEach(classRepr -> note("Generation serializer for " + classRepr.getName()));
-
-        return serializableTypes.stream().flatMap(ClassRepr::getRequirementMethods).distinct();
-    }
-
 }
