@@ -1,7 +1,10 @@
 package hohserg.elegant.networking.annotation.processor;
 
-import hohserg.elegant.networking.annotation.processor.dom.*;
-import hohserg.elegant.networking.annotation.processor.dom.containers.*;
+import hohserg.elegant.networking.annotation.processor.dom.DataClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.EnumClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.containers.ArrayClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.containers.CollectionClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
 import lombok.Value;
 
 import java.util.List;
@@ -32,5 +35,10 @@ public interface MethodRequirement {
     @Value
     class CollectionMethod implements MethodRequirement {
         CollectionClassRepr forType;
+    }
+
+    @Value
+    class ArrayMethod implements MethodRequirement {
+        ArrayClassRepr forType;
     }
 }

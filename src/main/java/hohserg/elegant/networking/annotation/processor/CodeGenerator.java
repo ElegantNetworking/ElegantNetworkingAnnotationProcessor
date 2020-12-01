@@ -2,6 +2,7 @@ package hohserg.elegant.networking.annotation.processor;
 
 import com.squareup.javapoet.*;
 import hohserg.elegant.networking.annotation.processor.dom.*;
+import hohserg.elegant.networking.annotation.processor.dom.containers.ArrayClassRepr;
 import hohserg.elegant.networking.annotation.processor.dom.containers.CollectionClassRepr;
 import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
 import org.apache.commons.lang3.StringUtils;
@@ -14,7 +15,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
-import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.printDetailsOption;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.Modifier.*;
@@ -108,8 +108,53 @@ public class CodeGenerator {
                     generateEnumUnserializer(((MethodRequirement.EnumMethod) methodRequirement))
             );
 
+        } else if (methodRequirement instanceof MethodRequirement.ArrayMethod) {
+            return Stream.of(
+                    generateArraySerializer(((MethodRequirement.ArrayMethod) methodRequirement)),
+                    generateArrayUnserializer(((MethodRequirement.ArrayMethod) methodRequirement))
+            );
         } else
             throw new UnsupportedOperationException(methodRequirement.toString());
+    }
+
+    private static MethodSpec generateArraySerializer(MethodRequirement.ArrayMethod methodRequirement) {
+        ArrayClassRepr forType = methodRequirement.getForType();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
+                .returns(void.class)
+                .addParameter(TypeName.get(forType.getOriginal()), "value")
+                .addParameter(byteBuf, "acc");
+
+        builder.addStatement("acc.writeInt(value.length)");
+
+        TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
+        builder.beginControlFlow("for ($T e :value)", elementTypeName);
+        builder.addStatement("serialize" + forType.getElementType().getSimpleName() + "Generic(e,acc)");
+        builder.endControlFlow();
+
+        return builder.build();
+    }
+
+    private static MethodSpec generateArrayUnserializer(MethodRequirement.ArrayMethod methodRequirement) {
+        ArrayClassRepr forType = methodRequirement.getForType();
+
+        MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
+                .returns(TypeName.get(forType.getOriginal()))
+                .addParameter(byteBuf, "buf");
+
+        TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
+
+        builder.addStatement("int size = buf.readInt()");
+        builder.addStatement("$T[] value = new  $T[size]", elementTypeName, elementTypeName);
+
+        builder.beginControlFlow("for (int i=0;i<size;i++)");
+        builder.addStatement("$T e = unserialize" + forType.getElementType().getSimpleName() + "Generic(buf)", TypeName.get(forType.getElementType().getOriginal()));
+        builder.addStatement("value[i] = e");
+        builder.endControlFlow();
+
+        builder.addStatement("return value");
+
+        return builder.build();
     }
 
     private static MethodSpec generateEnumSerializer(MethodRequirement.EnumMethod methodRequirement) {
@@ -376,6 +421,9 @@ public class CodeGenerator {
 
         } else if (classRepr instanceof EnumClassRepr) {
             return Stream.of(new MethodRequirement.EnumMethod((EnumClassRepr) classRepr));
+
+        } else if (classRepr instanceof ArrayClassRepr) {
+            return Stream.of(new MethodRequirement.ArrayMethod((ArrayClassRepr) classRepr));
 
         } else
             throw new UnsupportedOperationException(classRepr.toString());

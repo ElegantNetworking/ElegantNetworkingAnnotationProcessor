@@ -20,7 +20,7 @@ public class ArrayClassRepr implements ClassRepr {
 
     @Override
     public String getSimpleName() {
-        return "Array" + elementType.getName();
+        return "Array" + elementType.getSimpleName();
     }
 
     @Override

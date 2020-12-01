@@ -1,5 +1,6 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
+import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import hohserg.elegant.networking.annotation.processor.dom.containers.ArrayClassRepr;
 import hohserg.elegant.networking.annotation.processor.dom.containers.CollectionClassRepr;
 import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
@@ -12,8 +13,8 @@ import javax.lang.model.type.TypeMirror;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.note;
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
 import static hohserg.elegant.networking.annotation.processor.dom.PrimitiveClassRepr.boxedPrimitives;
 
@@ -27,6 +28,10 @@ public interface ClassRepr {
     TypeMirror getOriginal();
 
     Set<Modifier> getModifiers();
+
+    default Stream<MethodRequirement> getRequirementMethods() {
+        throw new UnsupportedOperationException(toString());
+    }
 
 
     class CacheHolder {
