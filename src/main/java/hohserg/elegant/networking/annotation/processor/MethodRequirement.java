@@ -37,11 +37,10 @@ public interface MethodRequirement {
         @Override
         public MethodSpec generateSerializer() {
             List<DataClassRepr> implementations = getSealedImplementations();
-            DataClassRepr forType1 = getForType();
 
-            MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType1.getSimpleName() + "Generic")
+            MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
-                    .addParameter(ClassName.get(forType1.getOriginal()), "value")
+                    .addParameter(ClassName.get(forType.getOriginal()), "value")
                     .addParameter(byteBuf, "acc");
 
             builder.beginControlFlow("if (false) ");
@@ -55,7 +54,7 @@ public interface MethodRequirement {
             }
 
             builder.nextControlFlow("else");
-            builder.addStatement("throw new IllegalStateException(\"Unexpected implementation of $L: \"+value.getClass().getName())", forType1.getName());
+            builder.addStatement("throw new IllegalStateException(\"Unexpected implementation of $L: \"+value.getClass().getName())", forType.getName());
             builder.endControlFlow();
 
             return builder.build();
@@ -64,10 +63,9 @@ public interface MethodRequirement {
         @Override
         public MethodSpec generateUnserializer() {
             List<DataClassRepr> implementations = getSealedImplementations();
-            DataClassRepr forType1 = getForType();
 
-            MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType1.getSimpleName() + "Generic")
-                    .returns(TypeName.get(forType1.getOriginal()))
+            MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
+                    .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
 
             builder.addStatement("byte concreteIndex = buf.readByte()");
@@ -82,7 +80,7 @@ public interface MethodRequirement {
             }
 
             builder.nextControlFlow("else");
-            builder.addStatement("throw new IllegalStateException(\"Unexpected implementation of $L: concreteIndex = \"+concreteIndex)", forType1.getName());
+            builder.addStatement("throw new IllegalStateException(\"Unexpected implementation of $L: concreteIndex = \"+concreteIndex)", forType.getName());
             builder.endControlFlow();
 
             return builder.build();
@@ -95,11 +93,9 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateSerializer() {
-            EnumClassRepr forType1 = getForType();
-
-            return MethodSpec.methodBuilder("serialize" + forType1.getSimpleName() + "Generic")
+            return MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
-                    .addParameter(TypeName.get(forType1.getOriginal()), "value")
+                    .addParameter(TypeName.get(forType.getOriginal()), "value")
                     .addParameter(byteBuf, "acc")
                     .addStatement("acc.writeByte(value.ordinal())")
                     .build();
@@ -107,13 +103,11 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateUnserializer() {
-            EnumClassRepr forType1 = getForType();
-
-            MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType1.getSimpleName() + "Generic")
-                    .returns(TypeName.get(forType1.getOriginal()))
+            MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
+                    .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
 
-            builder.addStatement("return $T.values()[buf.readByte()]", forType1.getOriginal());
+            builder.addStatement("return $T.values()[buf.readByte()]", forType.getOriginal());
             return builder.build();
         }
     }
@@ -171,7 +165,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateSerializer() {
-
             MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
                     .addParameter(TypeName.get(forType.getOriginal()), "value")
@@ -191,7 +184,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateUnserializer() {
-
             MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
                     .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
@@ -217,7 +209,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateSerializer() {
-
             MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
                     .addParameter(TypeName.get(forType.getOriginal()), "value")
@@ -235,7 +226,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateUnserializer() {
-
             MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
                     .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
@@ -260,7 +250,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateSerializer() {
-            
             MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
                     .addParameter(TypeName.get(forType.getOriginal()), "value")
@@ -278,7 +267,6 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateUnserializer() {
-
             MethodSpec.Builder builder = MethodSpec.methodBuilder("unserialize" + forType.getSimpleName() + "Generic")
                     .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
