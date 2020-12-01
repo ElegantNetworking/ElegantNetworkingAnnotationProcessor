@@ -260,12 +260,13 @@ public interface MethodRequirement {
 
         @Override
         public MethodSpec generateSerializer() {
+            
             MethodSpec.Builder builder = MethodSpec.methodBuilder("serialize" + forType.getSimpleName() + "Generic")
                     .returns(void.class)
                     .addParameter(TypeName.get(forType.getOriginal()), "value")
                     .addParameter(byteBuf, "acc");
 
-            builder.addStatement("acc.writeInt(value.size())");
+            builder.addStatement("acc.writeInt(value.length)");
 
             TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
             builder.beginControlFlow("for ($T e :value)", elementTypeName);
