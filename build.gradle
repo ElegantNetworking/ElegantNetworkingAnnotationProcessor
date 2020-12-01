@@ -13,7 +13,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '2.3'
+version '2.4'
 
 sourceCompatibility = 1.8
 
@@ -107,6 +107,11 @@ uploadArchives {
                         name = 'hohserg'
                         email = 'hohserg1@yandex.ru'
                     }
+                }
+            }
+            pom.whenConfigured {
+                p -> p.dependencies = p.dependencies.findAll {
+                    dep -> false
                 }
             }
         }
