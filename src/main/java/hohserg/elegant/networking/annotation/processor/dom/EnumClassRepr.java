@@ -1,17 +1,18 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
 import com.google.common.collect.ImmutableSet;
-import hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor;
+import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import lombok.Value;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.elementUtils;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
 
 @Value
 public class EnumClassRepr implements ClassRepr {
@@ -37,5 +38,10 @@ public class EnumClassRepr implements ClassRepr {
             return Optional.of(new EnumClassRepr(typeElement, typeElement.getQualifiedName().toString(), typeElement.getSimpleName().toString(), typeElement.getModifiers()));
         } else
             return Optional.empty();
+    }
+
+    @Override
+    public Stream<MethodRequirement> getRequirementMethods() {
+        return Stream.of(new MethodRequirement.EnumMethod(this));
     }
 }

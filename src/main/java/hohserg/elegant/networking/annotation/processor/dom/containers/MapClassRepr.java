@@ -2,6 +2,7 @@ package hohserg.elegant.networking.annotation.processor.dom.containers;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
 import lombok.Value;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
 
@@ -52,5 +54,10 @@ public class MapClassRepr implements ClassRepr {
                         ClassRepr.typeRepresentation(typeArguments.get(0)), ClassRepr.typeRepresentation(typeArguments.get(1)),
                         typeUtils.asElement(type).getModifiers(),
                         type));
+    }
+
+    @Override
+    public Stream<MethodRequirement> getRequirementMethods() {
+        return Stream.of(new MethodRequirement.MapMethod(this));
     }
 }

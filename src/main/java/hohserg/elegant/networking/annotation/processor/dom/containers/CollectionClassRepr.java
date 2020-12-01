@@ -3,6 +3,7 @@ package hohserg.elegant.networking.annotation.processor.dom.containers;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
 import lombok.Value;
 import org.apache.commons.lang3.tuple.Pair;
@@ -13,8 +14,8 @@ import javax.lang.model.type.TypeMirror;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
-import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.note;
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.typeUtils;
 
 @Value
@@ -54,5 +55,10 @@ public class CollectionClassRepr implements ClassRepr {
                         ClassRepr.typeRepresentation(((DeclaredType) type).getTypeArguments().get(0)),
                         typeUtils.asElement(type).getModifiers(),
                         type));
+    }
+
+    @Override
+    public Stream<MethodRequirement> getRequirementMethods() {
+        return Stream.of(new MethodRequirement.CollectionMethod(this));
     }
 }
