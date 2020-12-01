@@ -29,7 +29,7 @@ dependencies {
     compile project(':ElegantNetworkingCommon')
 }
 
-jar{
+jar {
     baseName 'annotation-processor' //not work
 }
 
@@ -39,7 +39,7 @@ shadowJar {
     relocate 'org.apache', 'shadow.org.apache'
 
     minimize()
-    
+
     classifier = null
 }
 
@@ -75,8 +75,9 @@ uploadArchives {
 
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            repository(url: releasesRepoUrl/*'file://localhost/' + new File(project.getProjectDir(),'repo').getAbsolutePath()*/){
-                authentication userName: "$ossrhUsername", password: "$ossrhPassword"
+            repository(url: releasesRepoUrl/*'file://localhost/' + new File(project.getProjectDir(),'repo').getAbsolutePath()*/) {
+                if (project.hasProperty("ossrhUsername"))
+                    authentication userName: "$ossrhUsername", password: "$ossrhPassword"
             }
 
             pom.artifactId = 'annotation-processor'
