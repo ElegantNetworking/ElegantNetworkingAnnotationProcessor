@@ -45,6 +45,6 @@ public class InheritanceUtils {
     }
 
     private static Stream<TypeMirror> getAllInterfaces(TypeMirror type){
-        return Stream.concat(Stream.of(type),((TypeElement) typeUtils.asElement(type)).getInterfaces().stream().flatMap(this::getAllInterfaces));
+        return Stream.concat(Stream.of(type),((TypeElement) typeUtils.asElement(type)).getInterfaces().stream().flatMap(InheritanceUtils::getAllInterfaces));
     }
 }
