@@ -13,7 +13,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '2.5'
+version '2.7'
 
 sourceCompatibility = 1.8
 
