@@ -106,7 +106,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
 
     private static boolean nonExistsMethod(TypeElement holder, ClassRepr type) {
-        String methodName = "serialize" + type.getSimpleName() + "Generic";
+        String methodName = MethodRequirement.serialize_Prefix + type.getSimpleName() + MethodRequirement.Generic_Suffix;
 
 
         boolean b = elementUtils.getAllMembers(holder).stream().noneMatch(m -> m.getKind() == METHOD && m.getSimpleName().toString().equals(methodName));

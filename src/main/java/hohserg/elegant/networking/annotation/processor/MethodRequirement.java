@@ -29,10 +29,10 @@ public interface MethodRequirement {
         throw new UnsupportedOperationException(toString());
     }
 
-    String serialize_Prefix = "serialize";
-    String unserialize_Prefix = "unserialize";
-    String Generic_Suffix = "Generic";
-    String Concretic_Suffix = "Concretic";
+    String serialize_Prefix = "serialize_";
+    String unserialize_Prefix = "unserialize_";
+    String Generic_Suffix = "_Generic";
+    String Concretic_Suffix = "_Concretic";
 
     @Value
     class GenericMethod implements MethodRequirement {
