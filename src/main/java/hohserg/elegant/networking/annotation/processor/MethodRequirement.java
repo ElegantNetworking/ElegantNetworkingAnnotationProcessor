@@ -57,7 +57,7 @@ public interface MethodRequirement {
 
             for (int concreteIndex = 0; concreteIndex < implementations.size(); concreteIndex++) {
                 DataClassRepr concreteType = implementations.get(concreteIndex);
-                builder.nextControlFlow("else if (value instanceof $L)", concreteType.getName());
+                builder.nextControlFlow("else if (value instanceof $T)", concreteType.getOriginal());
                 builder.addStatement("acc.writeByte($L)", concreteIndex);
                 builder.addStatement(serialize_Prefix + concreteType.getSimpleName() + Concretic_Suffix + "(value, acc)");
             }
@@ -142,7 +142,7 @@ public interface MethodRequirement {
         }
 
         private boolean haveSerializationOverride() {
-            return InheritanceUtils.getAllInterfaces(forType).anyMatch(e->e==elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
+            return InheritanceUtils.getAllInterfaces(forType).anyMatch(e -> e == elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
                     elementUtils.getAllMembers(forType.getElement())
                             .stream().anyMatch(e -> {
                         if (e.getKind() == CONSTRUCTOR) {
@@ -164,12 +164,12 @@ public interface MethodRequirement {
                     .addParameter(byteBuf, "buf");
 
             if (haveSerializationOverride())
-                builder.addStatement("return new " + forType.getName() + "(buf)");
+                builder.addStatement("return new $T(buf)", forType.getOriginal());
             else {
                 if (forType.getConstructors().stream().noneMatch(c -> c.getArguments().equals(finalFields.stream().map(FieldRepr::getType).collect(toList()))))
                     throw new IllegalStateException("Constructor for final fields not found");
 
-                builder.addCode(forType.getName() + " value = new " + forType.getName() + "(");
+                builder.addCode("$T value = new $T(", forType.getOriginal(), forType.getOriginal());
                 for (int i = 0; i < finalFields.size(); i++) {
                     builder.addCode(unserialize_Prefix + finalFields.get(i).getType().getSimpleName() + Generic_Suffix + "(buf)");
                     if (i < finalFields.size() - 1)
@@ -203,7 +203,7 @@ public interface MethodRequirement {
             TypeName keyTypeName = TypeName.get(forType.getKeyType().getOriginal());
             TypeName valueTypeName = TypeName.get(forType.getValueType().getOriginal());
 
-            builder.beginControlFlow("for (Map.Entry<$T, $T> entry :value.entrySet())",keyTypeName,valueTypeName);
+            builder.beginControlFlow("for (Map.Entry<$T, $T> entry :value.entrySet())", keyTypeName, valueTypeName);
             builder.addStatement("$T k = entry.getKey()", keyTypeName);
             builder.addStatement("$T v = entry.getValue()", valueTypeName);
             builder.addStatement(serialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix + "(k,acc)");
