@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
 import static java.util.stream.Collectors.toList;
@@ -37,5 +38,13 @@ public class InheritanceUtils {
             r.add(classRepr);
 
         return r;
+    }
+
+    public static Stream<? extends TypeMirror> getAllInterfaces(DataClassRepr type) {
+        return getAllInterfaces(type.getOriginal());
+    }
+
+    private static Stream<TypeMirror> getAllInterfaces(TypeMirror type){
+        return Stream.concat(Stream.of(type),((TypeElement) typeUtils.asElement(type)).getInterfaces().stream().flatMap(this::getAllInterfaces));
     }
 }

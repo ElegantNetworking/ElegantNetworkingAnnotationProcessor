@@ -11,13 +11,11 @@ import hohserg.elegant.networking.annotation.processor.dom.containers.Collection
 import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
 import lombok.Value;
 
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.CodeGenerator.*;
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
@@ -144,7 +142,7 @@ public interface MethodRequirement {
         }
 
         private boolean haveSerializationOverride() {
-            return getAllInterfaces(forType).anyMatch(e->e==elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
+            return InheritanceUtils.getAllInterfaces(forType).anyMatch(e->e==elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
                     elementUtils.getAllMembers(forType.getElement())
                             .stream().anyMatch(e -> {
                         if (e.getKind() == CONSTRUCTOR) {
@@ -153,14 +151,6 @@ public interface MethodRequirement {
                         } else
                             return false;
                     });
-        }
-
-        private Stream<? extends TypeMirror> getAllInterfaces(DataClassRepr type) {
-            return getAllInterfaces(type.getOriginal());
-        }
-
-        private Stream<TypeMirror> getAllInterfaces(TypeMirror type){
-            return Stream.concat(Stream.of(type),((TypeElement) typeUtils.asElement(type)).getInterfaces().stream().flatMap(this::getAllInterfaces));
         }
 
         @Override
