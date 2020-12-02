@@ -66,7 +66,7 @@ public class CodeGenerator {
                 .addParameter(byteBuf, "acc");
 
         serialize
-                .addStatement("serialize" + typeElement.getSimpleName() + "Concretic(value, acc)");
+                .addStatement(MethodRequirement.serialize_Prefix + typeElement.getSimpleName() + MethodRequirement.Concretic_Suffix + "(value, acc)");
 
         return serialize.build();
     }
@@ -80,7 +80,7 @@ public class CodeGenerator {
                 .addParameter(byteBuf, "buf");
 
         unserialize
-                .addStatement("return unserialize" + typeElement.getSimpleName() + "Concretic(buf)");
+                .addStatement("return " + MethodRequirement.unserialize_Prefix + typeElement.getSimpleName() + MethodRequirement.Concretic_Suffix + "(buf)");
 
         return unserialize.build();
     }
