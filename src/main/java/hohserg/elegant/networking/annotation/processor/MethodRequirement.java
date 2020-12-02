@@ -11,12 +11,18 @@ import hohserg.elegant.networking.annotation.processor.dom.containers.Collection
 import hohserg.elegant.networking.annotation.processor.dom.containers.MapClassRepr;
 import lombok.Value;
 
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.CodeGenerator.*;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
 import static java.util.stream.Collectors.toList;
+import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.FINAL;
 
 public interface MethodRequirement {
@@ -81,7 +87,7 @@ public interface MethodRequirement {
             for (int concreteIndex = 0; concreteIndex < implementations.size(); concreteIndex++) {
                 DataClassRepr concreteType = implementations.get(concreteIndex);
                 builder.nextControlFlow("else if (concreteIndex == $L)", concreteIndex);
-                builder.addStatement("return "+unserialize_Prefix + concreteType.getSimpleName() + Concretic_Suffix + "(buf)");
+                builder.addStatement("return " + unserialize_Prefix + concreteType.getSimpleName() + Concretic_Suffix + "(buf)");
             }
 
             builder.nextControlFlow("else");
@@ -128,10 +134,33 @@ public interface MethodRequirement {
                     .addParameter(ClassName.get(forType.getOriginal()), "value")
                     .addParameter(byteBuf, "acc");
 
-            for (FieldRepr field : onlySerializableFields(forType.getFields()))
-                builder.addStatement(serialize_Prefix + field.getType().getSimpleName() + Generic_Suffix+"($L, acc)", getFieldGetAccess(forType, field));
+            if (haveSerializationOverride())
+                builder.addStatement("value.serialize(acc)");
+            else
+                for (FieldRepr field : onlySerializableFields(forType.getFields()))
+                    builder.addStatement(serialize_Prefix + field.getType().getSimpleName() + Generic_Suffix + "($L, acc)", getFieldGetAccess(forType, field));
 
             return builder.build();
+        }
+
+        private boolean haveSerializationOverride() {
+            return getAllInterfaces(forType).anyMatch(e->e==elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
+                    elementUtils.getAllMembers(forType.getElement())
+                            .stream().anyMatch(e -> {
+                        if (e.getKind() == CONSTRUCTOR) {
+                            List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
+                            return (parameterTypes.size() == 1 && parameterTypes.get(0) == elementUtils.getTypeElement(byteBuf.canonicalName()).asType());
+                        } else
+                            return false;
+                    });
+        }
+
+        private Stream<? extends TypeMirror> getAllInterfaces(DataClassRepr type) {
+            return getAllInterfaces(type.getOriginal());
+        }
+
+        private Stream<TypeMirror> getAllInterfaces(TypeMirror type){
+            return Stream.concat(Stream.of(type),((TypeElement) typeUtils.asElement(type)).getInterfaces().stream().flatMap(this::getAllInterfaces));
         }
 
         @Override
@@ -144,21 +173,25 @@ public interface MethodRequirement {
                     .returns(TypeName.get(forType.getOriginal()))
                     .addParameter(byteBuf, "buf");
 
-            if (forType.getConstructors().stream().noneMatch(c -> c.getArguments().equals(finalFields.stream().map(FieldRepr::getType).collect(toList()))))
-                throw new IllegalStateException("Constructor for final fields not found");
+            if (haveSerializationOverride())
+                builder.addStatement("return new " + forType.getName() + "(buf)");
+            else {
+                if (forType.getConstructors().stream().noneMatch(c -> c.getArguments().equals(finalFields.stream().map(FieldRepr::getType).collect(toList()))))
+                    throw new IllegalStateException("Constructor for final fields not found");
 
-            builder.addCode(forType.getName() + " value = new " + forType.getName() + "(");
-            for (int i = 0; i < finalFields.size(); i++) {
-                builder.addCode(unserialize_Prefix + finalFields.get(i).getType().getSimpleName() + Generic_Suffix+"(buf)");
-                if (i < finalFields.size() - 1)
-                    builder.addCode(", ");
+                builder.addCode(forType.getName() + " value = new " + forType.getName() + "(");
+                for (int i = 0; i < finalFields.size(); i++) {
+                    builder.addCode(unserialize_Prefix + finalFields.get(i).getType().getSimpleName() + Generic_Suffix + "(buf)");
+                    if (i < finalFields.size() - 1)
+                        builder.addCode(", ");
+                }
+                builder.addCode(");\n");
+
+                for (FieldRepr field : mutableFields)
+                    builder.addStatement(getFieldSetAccess(forType, field), unserialize_Prefix + field.getType().getSimpleName() + Generic_Suffix + "(buf)");
+
+                builder.addStatement("return value");
             }
-            builder.addCode(");\n");
-
-            for (FieldRepr field : mutableFields)
-                builder.addStatement(getFieldSetAccess(forType, field), unserialize_Prefix + field.getType().getSimpleName() + Generic_Suffix+"(buf)");
-
-            builder.addStatement("return value");
 
             return builder.build();
         }
@@ -180,8 +213,8 @@ public interface MethodRequirement {
             builder.beginControlFlow("for (Map.Entry<String, Integer> entry :value.entrySet())");
             builder.addStatement("$T k = entry.getKey()", TypeName.get(forType.getKeyType().getOriginal()));
             builder.addStatement("$T v = entry.getValue()", TypeName.get(forType.getValueType().getOriginal()));
-            builder.addStatement(serialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix+"(k,acc)");
-            builder.addStatement(serialize_Prefix + forType.getValueType().getSimpleName() + Generic_Suffix+"(v,acc)");
+            builder.addStatement(serialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix + "(k,acc)");
+            builder.addStatement(serialize_Prefix + forType.getValueType().getSimpleName() + Generic_Suffix + "(v,acc)");
             builder.endControlFlow();
 
             return builder.build();
@@ -197,8 +230,8 @@ public interface MethodRequirement {
             builder.addStatement(forType.getConcreteBuilder());
 
             builder.beginControlFlow("for (int i=0;i<size;i++)");
-            builder.addStatement("$T k = "+unserialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix+"(buf)", TypeName.get(forType.getKeyType().getOriginal()));
-            builder.addStatement("$T v = "+unserialize_Prefix + forType.getValueType().getSimpleName() + Generic_Suffix+"(buf)", TypeName.get(forType.getValueType().getOriginal()));
+            builder.addStatement("$T k = " + unserialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix + "(buf)", TypeName.get(forType.getKeyType().getOriginal()));
+            builder.addStatement("$T v = " + unserialize_Prefix + forType.getValueType().getSimpleName() + Generic_Suffix + "(buf)", TypeName.get(forType.getValueType().getOriginal()));
             builder.addStatement("value.put(k, v)");
             builder.endControlFlow();
 
@@ -223,7 +256,7 @@ public interface MethodRequirement {
 
             TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
             builder.beginControlFlow("for ($T e :value)", elementTypeName);
-            builder.addStatement(serialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix+"(e,acc)");
+            builder.addStatement(serialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix + "(e,acc)");
             builder.endControlFlow();
 
             return builder.build();
@@ -239,7 +272,7 @@ public interface MethodRequirement {
             builder.addStatement(forType.getConcreteBuilder());
 
             builder.beginControlFlow("for (int i=0;i<size;i++)");
-            builder.addStatement("$T e = "+unserialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix+"(buf)", TypeName.get(forType.getElementType().getOriginal()));
+            builder.addStatement("$T e = " + unserialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix + "(buf)", TypeName.get(forType.getElementType().getOriginal()));
             builder.addStatement("value.add(e)");
             builder.endControlFlow();
 
@@ -264,7 +297,7 @@ public interface MethodRequirement {
 
             TypeName elementTypeName = TypeName.get(forType.getElementType().getOriginal());
             builder.beginControlFlow("for ($T e :value)", elementTypeName);
-            builder.addStatement(serialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix+"(e,acc)");
+            builder.addStatement(serialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix + "(e,acc)");
             builder.endControlFlow();
 
             return builder.build();
@@ -282,7 +315,7 @@ public interface MethodRequirement {
             builder.addStatement("$T[] value = new  $T[size]", elementTypeName, elementTypeName);
 
             builder.beginControlFlow("for (int i=0;i<size;i++)");
-            builder.addStatement("$T e = "+unserialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix+"(buf)", TypeName.get(forType.getElementType().getOriginal()));
+            builder.addStatement("$T e = " + unserialize_Prefix + forType.getElementType().getSimpleName() + Generic_Suffix + "(buf)", TypeName.get(forType.getElementType().getOriginal()));
             builder.addStatement("value[i] = e");
             builder.endControlFlow();
 
