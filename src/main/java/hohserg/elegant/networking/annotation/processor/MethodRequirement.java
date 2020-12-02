@@ -200,9 +200,12 @@ public interface MethodRequirement {
 
             builder.addStatement("acc.writeInt(value.size())");
 
-            builder.beginControlFlow("for (Map.Entry<String, Integer> entry :value.entrySet())");
-            builder.addStatement("$T k = entry.getKey()", TypeName.get(forType.getKeyType().getOriginal()));
-            builder.addStatement("$T v = entry.getValue()", TypeName.get(forType.getValueType().getOriginal()));
+            TypeName keyTypeName = TypeName.get(forType.getKeyType().getOriginal());
+            TypeName valueTypeName = TypeName.get(forType.getValueType().getOriginal());
+
+            builder.beginControlFlow("for (Map.Entry<$T, $T> entry :value.entrySet())",keyTypeName,valueTypeName);
+            builder.addStatement("$T k = entry.getKey()", keyTypeName);
+            builder.addStatement("$T v = entry.getValue()", valueTypeName);
             builder.addStatement(serialize_Prefix + forType.getKeyType().getSimpleName() + Generic_Suffix + "(k,acc)");
             builder.addStatement(serialize_Prefix + forType.getValueType().getSimpleName() + Generic_Suffix + "(v,acc)");
             builder.endControlFlow();
