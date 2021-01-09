@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static hohserg.elegant.networking.annotation.processor.CodeGenerator.*;
-import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
+import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.elementUtils;
 import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.FINAL;

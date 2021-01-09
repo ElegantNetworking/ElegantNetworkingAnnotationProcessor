@@ -1,7 +1,9 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableSet;
-import hohserg.elegant.networking.annotation.processor.dom.*;
+import hohserg.elegant.networking.annotation.processor.dom.ClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.DataClassRepr;
+import hohserg.elegant.networking.annotation.processor.dom.FieldRepr;
 import hohserg.elegant.networking.api.ElegantPacket;
 import lombok.SneakyThrows;
 
@@ -21,7 +23,8 @@ import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.CodeGenerator.generateSerializerSource;
 import static hohserg.elegant.networking.annotation.processor.dom.DataClassRepr.prepare;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.ElementKind.CLASS;
 import static javax.lang.model.element.ElementKind.METHOD;
 

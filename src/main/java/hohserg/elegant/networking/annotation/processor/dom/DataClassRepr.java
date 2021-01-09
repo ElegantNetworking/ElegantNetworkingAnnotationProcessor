@@ -69,7 +69,7 @@ public class DataClassRepr implements ClassRepr {
         List<DataClassRepr> sealedImplementations = InheritanceUtils.getAllSealedImplementations(this)
                 .stream().sorted(Comparator.comparing(DataClassRepr::getName)).collect(toList());
         if (options.containsKey(printDetailsOption))
-            note(this.getName() + " have implementations: " + sealedImplementations.stream().map(ClassRepr::getName).collect(toSet()));
+            note(getName() + " have implementations: " + sealedImplementations.stream().map(ClassRepr::getName).collect(toSet()));
 
         return Stream.concat(
                 Stream.of(new MethodRequirement.GenericMethod(this, sealedImplementations)),
