@@ -10,7 +10,6 @@ import javax.lang.model.type.TypeMirror;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor.*;
@@ -31,16 +30,28 @@ public class DataClassRepr implements ClassRepr {
     List<MethodRepr> constructors;
 
     public static DataClassRepr prepare(TypeElement typeElement) {
+        List<? extends Element> allSubElements = getAllSubElements(typeElement).collect(toList());
         return correctFieldModifiers(new DataClassRepr(
                 typeElement,
                 typeElement.getAnnotationMirrors(),
                 typeElement.getQualifiedName().toString(),
                 typeElement.getSimpleName().toString(),
                 typeElement.getModifiers(),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.FIELD).map(e -> ((VariableElement) e)).map(FieldRepr::prepare).collect(toList()),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.METHOD).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList()),
-                typeElement.getEnclosedElements().stream().filter(e -> e.getKind() == ElementKind.CONSTRUCTOR).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList())
+                allSubElements.stream().filter(e -> e.getKind() == ElementKind.FIELD).map(e -> ((VariableElement) e)).map(FieldRepr::prepare).collect(toList()),
+                allSubElements.stream().filter(e -> e.getKind() == ElementKind.METHOD).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList()),
+                allSubElements.stream().filter(e -> e.getKind() == ElementKind.CONSTRUCTOR).map(e -> ((ExecutableElement) e)).map(MethodRepr::prepare).collect(toList())
         ));
+    }
+
+    private static Stream<? extends Element> getAllSubElements(TypeElement typeElement) {
+        if (typeElement == null)
+            return Stream.empty();
+
+        TypeMirror superclass = typeElement.getSuperclass();
+        if (superclass == elementUtils.getTypeElement(Object.class.getName()).asType())
+            return typeElement.getEnclosedElements().stream();
+        else
+            return Stream.concat(getAllSubElements((TypeElement) typeUtils.asElement(superclass)), typeElement.getEnclosedElements().stream());
     }
 
     @Override
