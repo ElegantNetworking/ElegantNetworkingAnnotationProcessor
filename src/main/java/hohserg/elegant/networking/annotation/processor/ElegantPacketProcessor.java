@@ -53,7 +53,7 @@ public class ElegantPacketProcessor extends AbstractProcessor {
                 if (annotatedElement.getModifiers().contains(Modifier.PUBLIC)) {
                     if (havePacketInterfaces(typeElement)) {
                         currentElement = typeElement;
-                        note(annotatedElement, "Found elegant packet class" + typeElement.getSimpleName());
+                        note(annotatedElement, "Found elegant packet class " + typeElement.getSimpleName());
 
                         //elementUtils.getAllMembers(typeElement).forEach(e -> note(typeElement, "subelement " + e + e.getModifiers()));
                         //typeElement.getEnclosedElements().forEach(e -> note(typeElement, "subelement " + e));
@@ -139,8 +139,16 @@ public class ElegantPacketProcessor extends AbstractProcessor {
         note(currentElement, msg);
     }
 
+    public static void warn(String msg) {
+        warn(currentElement, msg);
+    }
+
     public static void note(Element e, String msg) {
         messager.printMessage(Diagnostic.Kind.NOTE, msg, e);
+    }
+
+    public static void warn(Element e, String msg) {
+        messager.printMessage(Diagnostic.Kind.WARNING, msg, e);
     }
 
     private void error(Element e, String msg) {

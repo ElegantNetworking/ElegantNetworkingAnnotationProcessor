@@ -68,8 +68,10 @@ public class DataClassRepr implements ClassRepr {
     public Stream<MethodRequirement> getRequirementMethods() {
         List<DataClassRepr> sealedImplementations = InheritanceUtils.getAllSealedImplementations(this)
                 .stream().sorted(Comparator.comparing(DataClassRepr::getName)).collect(toList());
-        if (options.containsKey(printDetailsOption))
+        if (options.containsKey(printDetailsOption) || sealedImplementations.size() > 1)
             note(getName() + " have implementations: " + sealedImplementations.stream().map(ClassRepr::getName).collect(toSet()));
+        if (sealedImplementations.isEmpty())
+            warn(getName() + " have no implementations! Is it a bug? ");
 
         return Stream.concat(
                 Stream.of(new MethodRequirement.GenericMethod(this, sealedImplementations)),
