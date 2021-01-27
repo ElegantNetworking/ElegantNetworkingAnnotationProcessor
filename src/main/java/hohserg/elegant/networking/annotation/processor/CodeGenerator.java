@@ -85,7 +85,7 @@ public class CodeGenerator {
         return unserialize.build();
     }
 
-    static List<FieldRepr> onlySerializableFields(List<FieldRepr> fields) {
+    public static List<FieldRepr> onlySerializableFields(List<FieldRepr> fields) {
         return fields.stream().filter(f -> !f.getModifiers().contains(TRANSIENT) && !f.getModifiers().contains(STATIC)).collect(toList());
     }
 

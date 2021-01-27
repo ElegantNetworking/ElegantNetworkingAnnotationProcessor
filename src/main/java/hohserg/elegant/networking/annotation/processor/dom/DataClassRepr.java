@@ -1,5 +1,6 @@
 package hohserg.elegant.networking.annotation.processor.dom;
 
+import hohserg.elegant.networking.annotation.processor.CodeGenerator;
 import hohserg.elegant.networking.annotation.processor.InheritanceUtils;
 import hohserg.elegant.networking.annotation.processor.MethodRequirement;
 import lombok.Value;
@@ -56,7 +57,7 @@ public class DataClassRepr implements ClassRepr {
 
     @Override
     public Set<ClassRepr> getEnclosingTypes() {
-        return fields.stream().map(FieldRepr::getType).collect(toSet());
+        return CodeGenerator.onlySerializableFields(fields).stream().map(FieldRepr::getType).collect(toSet());
     }
 
     @Override

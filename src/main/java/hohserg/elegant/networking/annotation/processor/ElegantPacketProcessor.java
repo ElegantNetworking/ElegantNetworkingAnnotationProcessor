@@ -98,13 +98,10 @@ public class ElegantPacketProcessor extends AbstractProcessor {
 
     private static Stream<ClassRepr> getAllSerializableTypes(ClassRepr classRepr) {
         return Stream.concat(Stream.of(classRepr),
-                (classRepr instanceof DataClassRepr) ?
-                        CodeGenerator.onlySerializableFields(((DataClassRepr) classRepr).getFields())
-                                .stream()
-                                .map(FieldRepr::getType)
-                                .filter(t -> nonExistsMethod(elementUtils.getTypeElement("hohserg.elegant.networking.impl.ISerializer"), t))
-                                .flatMap(ElegantPacketProcessor::getAllSerializableTypes)
-                        : Stream.empty());
+                classRepr.getEnclosingTypes()
+                        .stream()
+                        .filter(t -> nonExistsMethod(elementUtils.getTypeElement("hohserg.elegant.networking.impl.ISerializer"), t))
+                        .flatMap(ElegantPacketProcessor::getAllSerializableTypes));
     }
 
 
