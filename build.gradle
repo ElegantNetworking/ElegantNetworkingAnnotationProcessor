@@ -55,9 +55,6 @@ artifacts {
     archives javadocJar
     archives shadowJar
 }
-configurations.archives.with {
-    artifacts.remove artifacts.find { it.toString().contains("jar") }
-}
 
 signing {
     required { project.hasProperty("signing.keyId") }
@@ -73,7 +70,8 @@ uploadArchives {
 
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            repository(url: releasesRepoUrl/*'file://localhost/' + new File(project.getProjectDir(),'repo').getAbsolutePath()*/) {
+            def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
+            repository(url: localRepo) {
                 if (project.hasProperty("ossrhUsername"))
                     authentication userName: "$ossrhUsername", password: "$ossrhPassword"
             }
@@ -107,9 +105,10 @@ uploadArchives {
                 }
             }
             pom.whenConfigured {
-                p -> p.dependencies = p.dependencies.findAll {
-                    dep -> false
-                }
+                p ->
+                    p.dependencies = p.dependencies.findAll {
+                        dep -> false
+                    }
             }
         }
     }
