@@ -13,7 +13,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '2.8'
+version '2.8.1'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8

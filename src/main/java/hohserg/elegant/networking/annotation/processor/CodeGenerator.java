@@ -108,9 +108,9 @@ public class CodeGenerator {
             if (is_accessor)
                 return "value." + "is" + capitalized + "()";
             else
-                throw new IllegalStateException("Private fields must have getters");
+                throw new IllegalStateException("Private fields must have getters: " + typeElement.getName() + "#" + field.getName());
         } else
-            throw new IllegalStateException("Private fields must have getters");
+            throw new IllegalStateException("Private fields must have getters: " + typeElement.getName() + "#" + field.getName());
     }
 
     private static String setterAccess(DataClassRepr typeElement, FieldRepr field) {
@@ -120,7 +120,7 @@ public class CodeGenerator {
         if (set_accessor)
             return "value." + "set" + capitalized + "($L)";
         else
-            throw new IllegalStateException("Private non-final fields must have setters");
+            throw new IllegalStateException("Private non-final fields must have setters: " + typeElement.getName() + "#" + field.getName());
     }
 
     private static boolean isPrivate(FieldRepr f) {
