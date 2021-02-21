@@ -13,7 +13,7 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '2.8.1'
+version '3.0'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8
@@ -71,7 +71,7 @@ uploadArchives {
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
             def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
-            repository(url: localRepo) {
+            repository(url: releasesRepoUrl) {
                 if (project.hasProperty("ossrhUsername"))
                     authentication userName: "$ossrhUsername", password: "$ossrhPassword"
             }
