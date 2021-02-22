@@ -74,7 +74,6 @@ public class ElegantServiceProcessor extends BaseProcessor {
                 return s.hasNext() ? Optional.of(Long.parseLong(s.next())) : Optional.empty();
             }
         } catch (IOException e) {
-            e.printStackTrace();
             return Optional.empty();
         }
     }
