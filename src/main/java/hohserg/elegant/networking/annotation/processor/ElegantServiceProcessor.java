@@ -110,7 +110,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
 
             try (InputStream inputStream = resourceForRead.openInputStream()) {
 
-                List<String> fromService = ServiceUtils.readService(inputStream);
+                List<String> fromService = ServiceUtils.loadClassNamesFromService(inputStream);
                 return fromService.stream()
                         .map(elementUtils::getTypeElement)
                         .filter(Objects::nonNull)
