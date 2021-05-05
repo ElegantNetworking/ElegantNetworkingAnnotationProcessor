@@ -222,11 +222,6 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
                 });
     }
 
-    public static class TestContainer<A, C, B> {
-        A value;
-        B value2;
-    }
-
     private MethodSpec genericSingleSerializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericSerializeMethodName(type))
                 .returns(void.class)
