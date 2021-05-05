@@ -20,8 +20,6 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import java.io.IOException;
 import java.util.*;
 import java.util.function.Predicate;
@@ -77,7 +75,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
         specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils));
 
-        specialsBuilder.put(Pair.class.getCanonicalName(), new SpecialTypeSupport.PairSupport(typeUtils, elementUtils));
+        specialsBuilder.put(Pair.class.getCanonicalName(), new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, Pair.class.getCanonicalName()));
 
         return specialsBuilder.build();
     }

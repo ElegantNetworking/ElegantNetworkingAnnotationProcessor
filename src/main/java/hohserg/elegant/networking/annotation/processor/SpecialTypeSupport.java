@@ -6,7 +6,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import hohserg.elegant.networking.annotation.processor.code.generator.AbstractGenerator;
 import lombok.Value;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -239,6 +238,7 @@ public abstract class SpecialTypeSupport {
     public static class PairSupport implements AbstractGenerator {
         Types typeUtils;
         Elements elementUtils;
+        public String pairType;
 
         @Override
         public void generateSerializer(MethodSpec.Builder builder, DeclaredType type) {
@@ -248,7 +248,7 @@ public abstract class SpecialTypeSupport {
 
         @Override
         public void generateUnserializer(MethodSpec.Builder builder, DeclaredType type) {
-            builder.addStatement("return " + Pair.class.getCanonicalName() + ".of(" +
+            builder.addStatement("return " + pairType + ".of(" +
                     getGenericUnserializeMethodName(type.getTypeArguments().get(0)) + "(buf), " +
                     getGenericUnserializeMethodName(type.getTypeArguments().get(1)) + "(buf))");
         }
