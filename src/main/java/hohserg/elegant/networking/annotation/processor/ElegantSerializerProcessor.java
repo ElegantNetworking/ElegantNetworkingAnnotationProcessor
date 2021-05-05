@@ -46,9 +46,8 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         inheritanceUtils = new InheritanceUtils(typeUtils);
-        codeGenerator = new CodeGenerator(typeUtils, elementUtils);
-
         specials = initSpecials();
+        codeGenerator = new CodeGenerator(typeUtils, elementUtils, specials);
     }
 
     private ImmutableMap<String, AbstractGenerator> initSpecials() {

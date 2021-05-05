@@ -1,10 +1,8 @@
 package hohserg.elegant.networking.annotation.processor;
 
+import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
-import hohserg.elegant.networking.annotation.processor.code.generator.AccessUtils;
-import hohserg.elegant.networking.annotation.processor.code.generator.ICodeGenerator;
-import hohserg.elegant.networking.annotation.processor.code.generator.MethodNames;
-import hohserg.elegant.networking.annotation.processor.code.generator.TypeUtils;
+import hohserg.elegant.networking.annotation.processor.code.generator.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -16,6 +14,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -25,14 +24,16 @@ import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.*;
 
-public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, TypeUtils {
-    public CodeGenerator(Types typeUtils, Elements elementUtils) {
+public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, TypeUtils, FunctionalUtils {
+    public CodeGenerator(Types typeUtils, Elements elementUtils, Map<String, AbstractGenerator> specials) {
         this.typeUtils = typeUtils;
         this.elementUtils = elementUtils;
+        this.specials = specials;
     }
 
     private Types typeUtils;
     private Elements elementUtils;
+    private final Map<String, AbstractGenerator> specials;
 
     public Types getTypeUtils() {
         return typeUtils;
@@ -52,7 +53,13 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     Stream<MethodSpec> concreticMethods(DeclaredType type) {
         TypeElement element = (TypeElement) type.asElement();
-        return Stream.of(concreticSerializer(element, type), concreticUnserializer(element, type));
+        List<Map.Entry<DeclaredType, AbstractGenerator>> specialBaseTypes = getSpecialBaseTypes(type);
+        if (specialBaseTypes.isEmpty())
+            return Stream.of(concreticSerializer(element, type), concreticUnserializer(element, type));
+        else {
+            AbstractGenerator customSpecialGenerator = SpecialTypeSupport.getCustomSpecialGenerator(typeUtils, elementUtils, specialBaseTypes.get(0), type);
+            return customSpecialGenerator.generateMethodsForType(type, ImmutableList.of());
+        }
     }
 
     Stream<MethodSpec> genericMethods(DeclaredType type, List<DeclaredType> implementations) {
@@ -175,6 +182,16 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
         }
 
         return builder.build();
+    }
+
+    private List<Map.Entry<DeclaredType, AbstractGenerator>> getSpecialBaseTypes(DeclaredType declaredType) {
+        return specials.entrySet().stream()
+                .map(leftMapper(elementUtils::getTypeElement))
+                .map(leftMapper(Element::asType))
+                .map(leftMapper(typeUtils::erasure))
+                .map(leftMapper(t -> (DeclaredType) t))
+                .filter(t -> typeUtils.isSubtype(typeUtils.erasure(declaredType), t.getKey()))
+                .collect(toList());
     }
 
     private Stream<VariableElement> getSerializableFinalFields(TypeElement element) {

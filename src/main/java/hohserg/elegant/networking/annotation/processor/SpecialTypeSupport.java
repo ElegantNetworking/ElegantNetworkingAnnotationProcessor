@@ -74,6 +74,20 @@ public abstract class SpecialTypeSupport {
         return new MapTypeSupport(typeUtils, elementUtils, collectionType, createBuilderStatement, addStatement, finalizeStatement);
     }
 
+    public static AbstractGenerator getCustomSpecialGenerator(Types typeUtils, Elements elementUtils, Map.Entry<DeclaredType, AbstractGenerator> baseSpecial, DeclaredType customSpecialType) {
+        AbstractGenerator baseGenerator = baseSpecial.getValue();
+        if (baseGenerator instanceof SpecialTypeSupport.MapTypeSupport) {
+            return mutableMapSpecial(typeUtils, elementUtils, customSpecialType.toString());
+
+        } else if (baseGenerator instanceof SpecialTypeSupport.CollectionTypeSupport) {
+            return mutableCollectionSpecial(typeUtils, elementUtils, customSpecialType.toString());
+
+        } else if (baseGenerator instanceof SpecialTypeSupport.PairSupport) {
+            return new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, customSpecialType.toString());
+        } else
+            throw new AnnotationProcessorException(customSpecialType.asElement(), "Unsupported custom special type: " + customSpecialType.toString() + " with " + baseGenerator.getClass().getSimpleName());
+    }
+
     //todo
     /*
     @Value
