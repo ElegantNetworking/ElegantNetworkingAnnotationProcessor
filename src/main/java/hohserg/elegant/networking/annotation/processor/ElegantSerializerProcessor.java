@@ -40,16 +40,12 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     private Set<String> serializersFromService;
     public InheritanceUtils inheritanceUtils;
 
-    public static Elements elementUtils1;
-    public static Types typeUtils1;
     private CodeGenerator codeGenerator;
 
     @Override
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
         inheritanceUtils = new InheritanceUtils(typeUtils);
-        elementUtils1 = processingEnv.getElementUtils();
-        typeUtils1 = processingEnv.getTypeUtils();
         codeGenerator = new CodeGenerator(typeUtils, elementUtils);
 
         specials = initSpecials();
@@ -233,7 +229,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     }
 
     private Predicate<TypeElement> isHaveInterface(String... atLeastOne) {
-        return e -> Arrays.stream(atLeastOne).anyMatch(i -> inheritanceUtils.isImplements(e.asType(), elementUtils1.getTypeElement(i)));
+        return e -> Arrays.stream(atLeastOne).anyMatch(i -> inheritanceUtils.isImplements(e.asType(), elementUtils.getTypeElement(i)));
     }
 
     public <E extends Element> Predicate<E> validate(Predicate<E> f, String errorMsg) {
