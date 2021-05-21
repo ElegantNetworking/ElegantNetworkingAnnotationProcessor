@@ -37,10 +37,10 @@ public class ElegantServiceProcessor extends BaseProcessor {
         super.init(processingEnv);
         handleUnexpectedErrors(this::loadExistingServices);
         inheritanceUtils = new InheritanceUtils(typeUtils);
-        handleUnexpectedErrors(this::derrivedInit);
+        handleUnexpectedErrors(this::deferredInit);
     }
 
-    private void derrivedInit() {
+    private void deferredInit() {
         Optional<Long> timeOffsetBetweenInitAndProcess = loadTimeOffsetBetweenInitAndProcess();
         isFirstRun = !timeOffsetBetweenInitAndProcess.isPresent();
 

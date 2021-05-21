@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.*;
 import hohserg.elegant.networking.annotation.processor.code.generator.*;
 
+import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -25,15 +26,17 @@ import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.*;
 
 public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, TypeUtils, FunctionalUtils {
-    public CodeGenerator(Types typeUtils, Elements elementUtils, Map<String, AbstractGenerator> specials) {
+    public CodeGenerator(Types typeUtils, Elements elementUtils, Map<String, AbstractGenerator> specials, Messager messager) {
         this.typeUtils = typeUtils;
         this.elementUtils = elementUtils;
         this.specials = specials;
+        this.messager = messager;
     }
 
     private Types typeUtils;
     private Elements elementUtils;
     private final Map<String, AbstractGenerator> specials;
+    private final Messager messager;
 
     public Types getTypeUtils() {
         return typeUtils;
@@ -164,7 +167,11 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
         if (haveSerializationOverride(type))
             builder.addStatement("return new $T(buf)", type);
         else {
-            if (getConstructors(element).noneMatch(c -> c.getParameters().stream().map(Element::asType).collect(toList()).equals(finalFields)))
+            if (getConstructors(element).noneMatch(c -> {
+                List<TypeMirror> constructorSignature = c.getParameters().stream().map(Element::asType).collect(toList());
+
+                return signatureEquals(constructorSignature, finalFields);
+            }))
                 throw new AnnotationProcessorException(element, "Constructor for final fields not found. Required " + finalFields);
 
             builder.addCode("$T value = new $T(", type, type);
@@ -184,9 +191,21 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
         return builder.build();
     }
 
+    private boolean signatureEquals(List<TypeMirror> a, List<TypeMirror> b) {
+        if (a.size() == b.size()) {
+            for (int i = 0; i < a.size(); i++)
+                if (!typeEquals(a.get(i), b.get(i)))
+                    return false;
+
+            return true;
+        } else
+            return false;
+    }
+
     private List<Map.Entry<DeclaredType, AbstractGenerator>> getSpecialBaseTypes(DeclaredType declaredType) {
         return specials.entrySet().stream()
                 .map(leftMapper(elementUtils::getTypeElement))
+                .filter(e -> e.getKey() != null)
                 .map(leftMapper(Element::asType))
                 .map(leftMapper(typeUtils::erasure))
                 .map(leftMapper(t -> (DeclaredType) t))

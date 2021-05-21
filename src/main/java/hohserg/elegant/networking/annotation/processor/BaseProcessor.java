@@ -1,6 +1,7 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableSet;
+import hohserg.elegant.networking.utils.PrintUtils;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -11,6 +12,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +47,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
                     "Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues \n"
                             + e.toString() + "\n"
                             + Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n")));*/
+            PrintWriter writer = PrintUtils.getWriterForStringConsumer(this::error);
+            writer.println("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues");
+            e.printStackTrace(writer);
+            writer.flush();
             throw new IllegalStateException("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues \n", e);
         }
     }

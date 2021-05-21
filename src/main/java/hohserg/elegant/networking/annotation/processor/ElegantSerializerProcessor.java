@@ -1,8 +1,6 @@
 package hohserg.elegant.networking.annotation.processor;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import hohserg.elegant.networking.Refs;
@@ -45,7 +43,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         super.init(processingEnv);
         inheritanceUtils = new InheritanceUtils(typeUtils);
         specials = initSpecials();
-        codeGenerator = new CodeGenerator(typeUtils, elementUtils, specials);
+        codeGenerator = new CodeGenerator(typeUtils, elementUtils, specials, messager);
     }
 
     private ImmutableMap<String, AbstractGenerator> initSpecials() {
@@ -56,13 +54,13 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         mutableCollectionSpecial(specialsBuilder, ArrayList.class, ArrayList.class);
         mutableCollectionSpecial(specialsBuilder, LinkedList.class, LinkedList.class);
         mutableCollectionSpecial(specialsBuilder, Queue.class, LinkedList.class);
-        immutableCollectionSpecial(specialsBuilder, ImmutableList.class, ImmutableList.class);
+        specialsBuilder.put("com.google.common.collect.ImmutableList", SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableList"));//using string contant because shadowing of library
 
         mutableCollectionSpecial(specialsBuilder, Set.class, HashSet.class);
         mutableCollectionSpecial(specialsBuilder, HashSet.class, HashSet.class);
         specialsBuilder.put(EnumSet.class.getCanonicalName(), SpecialTypeSupport.commonCollectionSpecial(typeUtils, elementUtils, EnumSet.class.getCanonicalName(), type -> EnumSet.class.getCanonicalName() + ".noneOf(" + type.getTypeArguments().get(0) + ".class)", "$L.add(e)", "$L"));
         mutableCollectionSpecial(specialsBuilder, LinkedHashSet.class, LinkedHashSet.class);
-        immutableCollectionSpecial(specialsBuilder, ImmutableSet.class, ImmutableSet.class);
+        specialsBuilder.put("com.google.common.collect.ImmutableSet", SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableSet"));//using string contant because shadowing of library
 
         mutableMapSpecial(specialsBuilder, Map.class, HashMap.class);
         mutableMapSpecial(specialsBuilder, HashMap.class, HashMap.class);
@@ -70,7 +68,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         mutableMapSpecial(specialsBuilder, NavigableMap.class, TreeMap.class);
         mutableMapSpecial(specialsBuilder, TreeMap.class, TreeMap.class);
         mutableMapSpecial(specialsBuilder, LinkedHashMap.class, LinkedHashMap.class);
-        immutableMapSpecial(specialsBuilder, ImmutableMap.class, ImmutableMap.class);
+        specialsBuilder.put("com.google.common.collect.ImmutableMap", SpecialTypeSupport.immutableMapSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableMap"));//using string contant because shadowing of library
         specialsBuilder.put(EnumMap.class.getCanonicalName(), SpecialTypeSupport.commonMapSpecial(typeUtils, elementUtils, EnumMap.class.getCanonicalName(), type -> "new " + EnumMap.class.getCanonicalName() + "(" + type.getTypeArguments().get(0) + ".class)", "$L.put($L,$L)", "$L"));
 
         specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils));
@@ -171,9 +169,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 AbstractGenerator specialTypeSupport = specials.get(element.getQualifiedName().toString());
                 if (specialTypeSupport != null)
                     specialTypeSupport.getAllSerializableTypes(this, (DeclaredType) type, types);
-                else {
-                    //note("toConcreteTypeParameter " + toConcreteTypeParameter);
-
+                else if (nonExistsSerializer(type)) {
                     List<DeclaredType> allImplementations = getAllImplementations(((DeclaredType) type));
                     types.put(type, allImplementations);
                     Set<TypeMirror> fieldTypes = element.getEnclosedElements().stream()

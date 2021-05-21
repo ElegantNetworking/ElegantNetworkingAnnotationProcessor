@@ -11,12 +11,16 @@ import java.util.function.Function;
 public interface TypeUtils {
     default ImmutableMap<TypeMirror, TypeMirror> getRawParametersMappings(DeclaredType type) {
         ImmutableMap.Builder<TypeMirror, TypeMirror> toRawTypeParameter = ImmutableMap.builder();
-        List<? extends TypeMirror> rawParameters = ((DeclaredType) type.asElement().asType()).getTypeArguments();
+        List<? extends TypeMirror> rawParameters = getRawType(type).getTypeArguments();
         List<? extends TypeMirror> concreteParameters = type.getTypeArguments();
         for (int i = 0; i < rawParameters.size(); i++)
             toRawTypeParameter.put(rawParameters.get(i), concreteParameters.get(i));
 
         return toRawTypeParameter.build();
+    }
+
+    default DeclaredType getRawType(DeclaredType type) {
+        return (DeclaredType) type.asElement().asType();
     }
 
     default Function<TypeMirror, TypeMirror> refineParameterizedTypes(DeclaredType type) {
@@ -27,5 +31,18 @@ public interface TypeUtils {
             else
                 return t;
         };
+    }
+
+
+    default boolean typeEquals(TypeMirror a, TypeMirror b) {
+        if (a == b)
+            return true;
+        else {
+            if (a instanceof DeclaredType && b instanceof DeclaredType)
+                return getRawType((DeclaredType) a).equals(getRawType((DeclaredType) b)) &&
+                        ((DeclaredType) a).getTypeArguments().equals(((DeclaredType) b).getTypeArguments());
+            else
+                return a.equals(b);
+        }
     }
 }

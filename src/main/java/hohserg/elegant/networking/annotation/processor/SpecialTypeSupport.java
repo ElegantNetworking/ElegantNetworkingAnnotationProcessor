@@ -157,8 +157,15 @@ public abstract class SpecialTypeSupport {
 
         @Override
         public void generateUnserializer(MethodSpec.Builder builder, DeclaredType type) {
-            TypeMirror keyType = type.getTypeArguments().get(0);
-            TypeMirror valueType = type.getTypeArguments().get(1);
+            TypeMirror keyType;
+            TypeMirror valueType;
+            if (type.getTypeArguments().size() == 2) {
+                keyType = type.getTypeArguments().get(0);
+                valueType = type.getTypeArguments().get(1);
+            } else {//custom non parametrizable collection
+                //todo
+                throw new AnnotationProcessorException(type.asElement(), "Custom collection must have type parameters");
+            }
 
             builder.addStatement("int size = buf.readInt()");
             builder.addStatement(collectionType + " value = " + createBuilderStatement.apply(type));
