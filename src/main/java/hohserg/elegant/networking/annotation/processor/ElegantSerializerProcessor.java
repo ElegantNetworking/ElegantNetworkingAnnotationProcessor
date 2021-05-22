@@ -1,9 +1,9 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
-import hohserg.elegant.networking.Refs;
 import hohserg.elegant.networking.annotation.processor.code.generator.AbstractGenerator;
 import hohserg.elegant.networking.annotation.processor.code.generator.TypeUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -23,13 +23,11 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static hohserg.elegant.networking.Refs.ElegantPacket_name;
-import static hohserg.elegant.networking.Refs.ISerializer_name;
+import static hohserg.elegant.networking.Refs.*;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.ElementKind.*;
 
-@SupportedAnnotationTypes(Refs.ElegantPacket_name)
 public class ElegantSerializerProcessor extends BaseProcessor implements TypeUtils {
 
     private Set<TypeElement> packetsFromService;
@@ -97,18 +95,33 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         handleUnexpectedErrors(() -> {
-            if (annotations.contains(elementUtils.getTypeElement(ElegantPacket_name))) {
+            if (IsExistsAnnotatedInCurrentRound(annotations)) {
+
                 List<TypeElement> elegantPackets = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantPacket_name))
                         .stream()
                         .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantPacket_name).getSimpleName() + " can be applied only to classes and interfaces"))
                         .map(e -> ((TypeElement) e))
                         .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant packet class must be public"))
-                        .filter(validate(isHaveInterface(Refs.ClientToServerPacket_name, Refs.ServerToClientPacket_name), "The elegant packet class must implement ClientToServerPacket or ServerToClientPacket"))
+                        .filter(validate(isHaveInterface(ClientToServerPacket_name, ServerToClientPacket_name), "The elegant packet class must implement ClientToServerPacket or ServerToClientPacket"))
                         .collect(toList());
+
 
                 elegantPackets.forEach(e -> noteDetailed(e, "Found elegant packet class"));
 
-                elegantPackets.forEach(e -> {
+
+                List<TypeElement> elegantSerializable = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantSerializable_name))
+                        .stream()
+                        .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantSerializable_name).getSimpleName() + " can be applied only to classes and interfaces"))
+                        .map(e -> ((TypeElement) e))
+                        .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant serializable class must be public"))
+                        .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement ClientToServerPacket or ServerToClientPacket"))
+                        .collect(toList());
+
+                elegantSerializable.forEach(e -> noteDetailed(e, "Found elegant serializable class"));
+
+                elegantSerializable.addAll(elegantPackets);
+
+                elegantSerializable.forEach(e -> {
                     Map<TypeMirror, List<? extends TypeMirror>> types = new HashMap<>();
                     getAllSerializableTypes(e.asType(), types);
                     noteDetailed("Required to serialize " + types);
@@ -136,6 +149,15 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             }
         });
         return false;
+    }
+
+    public boolean IsExistsAnnotatedInCurrentRound(Set<? extends TypeElement> annotations) {
+        return getSupportedAnnotationTypes().stream().map(elementUtils::getTypeElement).anyMatch(annotations::contains);
+    }
+
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
+        return ImmutableSet.of(ElegantPacket_name, ElegantSerializable_name);
     }
 
     private Stream<MethodSpec> generateMethodsForType(TypeMirror type, List<? extends TypeMirror> implementations) {
