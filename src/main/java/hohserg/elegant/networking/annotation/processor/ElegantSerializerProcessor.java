@@ -143,7 +143,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                     try {
                         javaFile.writeTo(filer);
                     } catch (IOException exception) {
-                        error("Unable to write serializer class for elegant packet " + e + "with exception ", exception);
+                        error("Unable to write serializer class for elegant packet " + e, exception);
                     }
                 });
             }

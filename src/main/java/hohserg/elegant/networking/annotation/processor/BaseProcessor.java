@@ -98,6 +98,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     public void error(String msg, Throwable e) {
         PrintWriter writer = PrintUtils.getWriterForStringConsumer(this::error);
         writer.println(msg);
+        writer.println("Caused by");
         e.printStackTrace(writer);
         writer.flush();
     }
