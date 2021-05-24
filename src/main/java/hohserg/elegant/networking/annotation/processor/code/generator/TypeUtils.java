@@ -1,12 +1,15 @@
 package hohserg.elegant.networking.annotation.processor.code.generator;
 
 import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import java.util.List;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
 
 public interface TypeUtils {
     default ImmutableMap<TypeMirror, TypeMirror> getRawParametersMappings(DeclaredType type) {
@@ -44,5 +47,15 @@ public interface TypeUtils {
             else
                 return a.equals(b);
         }
+    }
+
+    default int uniqueHash(TypeMirror t) {
+        if (t instanceof DeclaredType) {
+            return new HashCodeBuilder()
+                    .append(getRawType((DeclaredType) t))
+                    .append(((DeclaredType) t).getTypeArguments().stream().map(this::uniqueHash).collect(toList()))
+                    .build();
+        }
+        return t.hashCode();
     }
 }

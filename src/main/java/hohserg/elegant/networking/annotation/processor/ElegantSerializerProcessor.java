@@ -10,7 +10,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
@@ -122,7 +121,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 elegantSerializable.addAll(elegantPackets);
 
                 elegantSerializable.forEach(e -> {
-                    Map<TypeMirror, List<? extends TypeMirror>> types = new HashMap<>();
+                    Map<TypeMirror, List<? extends TypeMirror>> types = new TypeMap<>();
                     getAllSerializableTypes(e.asType(), types);
                     noteDetailed("Required to serialize " + types);
 
