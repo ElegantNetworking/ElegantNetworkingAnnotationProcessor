@@ -88,7 +88,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
                 writer.flush();
             }
         } catch (IOException e) {
-            error("Cannot write timeOffset file with exception: " + e.toString());
+            error("Cannot write timeOffset file with exception: ", e);
         }
     }
 
@@ -121,7 +121,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
             note(path + " not found, its a first compilation");
             return new HashSet<>();
         } catch (IOException e) {
-            error("Unable to load service file " + path + " with exception " + e.toString());
+            error("Unable to load service file " + path + " with exception ", e);
             return new HashSet<>();
         }
     }
@@ -189,7 +189,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
                 writer.flush();
             }
         } catch (IOException e) {
-            error("Unable to write service file " + path + " with exception " + e.toString());
+            error("Unable to write service file " + path + "\nTip: close file in all programs or remove file (will be re-writed)\nCaused by", e);
         }
     }
 }

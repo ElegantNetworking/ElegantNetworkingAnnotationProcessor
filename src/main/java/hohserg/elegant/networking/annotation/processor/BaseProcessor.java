@@ -42,17 +42,14 @@ public abstract class BaseProcessor extends AbstractProcessor {
             error(e.element, e.msg);
 
         } catch (Throwable e) {
-            /*
-            messager.printMessage(Diagnostic.Kind.ERROR,
-                    "Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues \n"
-                            + e.toString() + "\n"
-                            + Arrays.stream(e.getStackTrace()).map(StackTraceElement::toString).collect(Collectors.joining("\n")));*/
-            PrintWriter writer = PrintUtils.getWriterForStringConsumer(this::error);
-            writer.println("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues");
-            e.printStackTrace(writer);
-            writer.flush();
+            error("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues", e);
             throw new IllegalStateException("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues \n", e);
         }
+    }
+
+    private String getFullElementName(Element element) {
+        Element enclosingElement = element.getEnclosingElement();
+        return (enclosingElement != null ? getFullElementName(enclosingElement) : "") + element.getSimpleName();
     }
 
     public void noteDetailed(Element e, String msg) {
@@ -83,6 +80,13 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     public void error(String msg) {
         messager.printMessage(Diagnostic.Kind.ERROR, msg);
+    }
+
+    public void error(String msg, Throwable e) {
+        PrintWriter writer = PrintUtils.getWriterForStringConsumer(this::error);
+        writer.println(msg);
+        e.printStackTrace(writer);
+        writer.flush();
     }
 
     public void error(Element e, String msg) {
