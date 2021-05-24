@@ -1,1 +1,2 @@
-hohserg.elegant.networking.annotation.processor.ElegantPacketProcessor
+hohserg.elegant.networking.annotation.processor.ElegantServiceProcessor
+hohserg.elegant.networking.annotation.processor.ElegantSerializerProcessor

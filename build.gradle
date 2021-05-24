@@ -1,9 +1,15 @@
+import org.gradle.internal.jvm.Jvm
+
 buildscript {
     repositories {
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
         classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+        classpath "io.freefair.gradle:lombok-plugin:6.0.0-m2"
     }
 }
 
@@ -11,9 +17,10 @@ apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: "io.freefair.lombok"
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '2.8'
+version '3.4'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8
@@ -23,11 +30,24 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.8'
+    //compileOnly 'org.projectlombok:lombok:1.18.8'
     compile 'com.google.guava:guava:21.0'
     compile 'org.apache.commons:commons-lang3:3.5'
     compile 'com.squareup:javapoet:1.13.0'
     compile project(':ElegantNetworkingCommon')
+
+    if (JavaVersion.current() <= JavaVersion.VERSION_1_8) {
+        testCompile files(Jvm.current().getToolsJar())
+    }
+    testCompile 'commons-io:commons-io:2.8.0'
+    testCompile 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testCompile 'com.google.testing.compile:compile-testing:0.19'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
+    testCompile "net.jqwik:jqwik:1.4.0"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 shadowJar {
@@ -71,7 +91,7 @@ uploadArchives {
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
             def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
-            repository(url: localRepo) {
+            repository(url: releasesRepoUrl) {
                 if (project.hasProperty("ossrhUsername"))
                     authentication userName: "$ossrhUsername", password: "$ossrhPassword"
             }
