@@ -1,7 +1,6 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import hohserg.elegant.networking.annotation.processor.code.generator.AbstractGenerator;
@@ -10,6 +9,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
@@ -27,6 +27,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.ElementKind.*;
 
+@SupportedAnnotationTypes({ElegantPacket_name, ElegantSerializable_name})
 public class ElegantSerializerProcessor extends BaseProcessor implements TypeUtils {
 
     private Set<TypeElement> packetsFromService;
@@ -152,11 +153,6 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     public boolean IsExistsAnnotatedInCurrentRound(Set<? extends TypeElement> annotations) {
         return getSupportedAnnotationTypes().stream().map(elementUtils::getTypeElement).anyMatch(annotations::contains);
-    }
-
-    @Override
-    public Set<String> getSupportedAnnotationTypes() {
-        return ImmutableSet.of(ElegantPacket_name, ElegantSerializable_name);
     }
 
     private Stream<MethodSpec> generateMethodsForType(TypeMirror type, List<? extends TypeMirror> implementations) {
