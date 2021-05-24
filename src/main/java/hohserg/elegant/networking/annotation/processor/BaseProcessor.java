@@ -39,7 +39,9 @@ public abstract class BaseProcessor extends AbstractProcessor {
         try {
             f.run();
         } catch (AnnotationProcessorException e) {
-            error(e.element, e.msg);
+            error(e.element,
+                    (options.containsKey(printDetailsOption) ? "[" + getFullElementName(e.element) + "]" : "") +
+                            e.msg);
 
         } catch (Throwable e) {
             error("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues", e);
