@@ -18,6 +18,7 @@ import java.util.Set;
 
 public abstract class BaseProcessor extends AbstractProcessor {
     public static String printDetailsOption = "elegantnetworking.printDetails";
+    public static String disablePrintElementNameOption = "elegantnetworking.disablePrintElementName";
 
     public Filer filer;
     public Elements elementUtils;
@@ -39,14 +40,17 @@ public abstract class BaseProcessor extends AbstractProcessor {
         try {
             f.run();
         } catch (AnnotationProcessorException e) {
-            error(e.element,
-                    (options.containsKey(printDetailsOption) ? "[" + getFullElementName(e.element) + "]" : "") +
-                            e.msg);
+            error(e.element, prepareMsg(e));
 
         } catch (Throwable e) {
-            error("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues", e);
-            throw new IllegalStateException("Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues \n", e);
+            String unexpectedMsg = "Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues";
+            error(unexpectedMsg, e);
+            throw new IllegalStateException(unexpectedMsg + " \n", e);
         }
+    }
+
+    private String prepareMsg(AnnotationProcessorException e) {
+        return (!options.containsKey(disablePrintElementNameOption) ? "[" + getFullElementName(e.element) + "]" : "") + e.msg;
     }
 
     private String getFullElementName(Element element) {
@@ -102,6 +106,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedOptions() {
-        return ImmutableSet.of("elegantnetworking.printDetails");
+        return ImmutableSet.of(printDetailsOption, disablePrintElementNameOption);
     }
 }
