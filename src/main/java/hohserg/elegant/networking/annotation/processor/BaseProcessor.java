@@ -40,7 +40,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         try {
             f.run();
         } catch (AnnotationProcessorException e) {
-            error(e.element, prepareMsg(e));
+            errorAPException(e);
 
         } catch (Throwable e) {
             String unexpectedMsg = "Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues";
@@ -49,8 +49,15 @@ public abstract class BaseProcessor extends AbstractProcessor {
         }
     }
 
+    public void errorAPException(AnnotationProcessorException e) {
+        error(e.element, prepareMsg(e));
+    }
+
     private String prepareMsg(AnnotationProcessorException e) {
-        return (!options.containsKey(disablePrintElementNameOption) ? "[" + getFullElementName(e.element) + "]" : "") + e.msg;
+        if (options.containsKey(disablePrintElementNameOption))
+            return e.msg;
+        else
+            return "[" + getFullElementName(e.element) + "]" + e.msg;
     }
 
     private String getFullElementName(Element element) {

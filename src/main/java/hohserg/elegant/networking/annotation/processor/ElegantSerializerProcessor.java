@@ -131,7 +131,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                 try {
                                     return generateMethodsForType(i.getKey(), i.getValue());
                                 } catch (AnnotationProcessorException exception) {
-                                    error(exception.element, exception.msg);
+                                    errorAPException(exception);
                                     return Stream.empty();
                                 }
                             })
@@ -142,7 +142,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                     try {
                         javaFile.writeTo(filer);
                     } catch (IOException exception) {
-                        error(e, "Unable to write serializer class for elegant packet with exception " + e.toString());
+                        error("Unable to write serializer class for elegant packet " + e + "with exception ", exception);
                     }
                 });
             }
