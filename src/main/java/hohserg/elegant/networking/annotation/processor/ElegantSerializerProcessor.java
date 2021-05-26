@@ -52,13 +52,13 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         mutableCollectionSpecial(specialsBuilder, ArrayList.class, ArrayList.class);
         mutableCollectionSpecial(specialsBuilder, LinkedList.class, LinkedList.class);
         mutableCollectionSpecial(specialsBuilder, Queue.class, LinkedList.class);
-        specialsBuilder.put("com.google.common.collect.ImmutableList", SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableList"));//using string contant because shadowing of library
+        specialsBuilder.put(ImmutableList_name, SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, ImmutableList_name));//using string contant because shadowing of library
 
         mutableCollectionSpecial(specialsBuilder, Set.class, HashSet.class);
         mutableCollectionSpecial(specialsBuilder, HashSet.class, HashSet.class);
         specialsBuilder.put(EnumSet.class.getCanonicalName(), SpecialTypeSupport.commonCollectionSpecial(typeUtils, elementUtils, EnumSet.class.getCanonicalName(), type -> EnumSet.class.getCanonicalName() + ".noneOf(" + type.getTypeArguments().get(0) + ".class)", "$L.add(e)", "$L"));
         mutableCollectionSpecial(specialsBuilder, LinkedHashSet.class, LinkedHashSet.class);
-        specialsBuilder.put("com.google.common.collect.ImmutableSet", SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableSet"));//using string contant because shadowing of library
+        specialsBuilder.put(ImmutableSet_name, SpecialTypeSupport.immutableCollectionSpecial(typeUtils, elementUtils, ImmutableSet_name));//using string contant because shadowing of library
 
         mutableMapSpecial(specialsBuilder, Map.class, HashMap.class);
         mutableMapSpecial(specialsBuilder, HashMap.class, HashMap.class);
@@ -66,12 +66,12 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         mutableMapSpecial(specialsBuilder, NavigableMap.class, TreeMap.class);
         mutableMapSpecial(specialsBuilder, TreeMap.class, TreeMap.class);
         mutableMapSpecial(specialsBuilder, LinkedHashMap.class, LinkedHashMap.class);
-        specialsBuilder.put("com.google.common.collect.ImmutableMap", SpecialTypeSupport.immutableMapSpecial(typeUtils, elementUtils, "com.google.common.collect.ImmutableMap"));//using string contant because shadowing of library
+        specialsBuilder.put(ImmutableMap_name, SpecialTypeSupport.immutableMapSpecial(typeUtils, elementUtils, ImmutableMap_name));//using string contant because shadowing of library
         specialsBuilder.put(EnumMap.class.getCanonicalName(), SpecialTypeSupport.commonMapSpecial(typeUtils, elementUtils, EnumMap.class.getCanonicalName(), type -> "new " + EnumMap.class.getCanonicalName() + "(" + type.getTypeArguments().get(0) + ".class)", "$L.put($L,$L)", "$L"));
 
         specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils));
 
-        specialsBuilder.put(Pair.class.getCanonicalName(), new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, Pair.class.getCanonicalName()));
+        specialsBuilder.put(Pair_name, new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, Pair_name));
 
         return specialsBuilder.build();
     }
@@ -225,6 +225,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             return Collections.singletonList(type);
         else {
             Element packageElement = elementUtils.getPackageOf(element);
+            note("getAllImplementations " + type);
             List<DeclaredType> r = allClassesInPackage(packageElement).filter(t -> typeUtils.directSupertypes(t).contains(type)).collect(toList());
             if (!type.asElement().getModifiers().contains(Modifier.ABSTRACT))
                 r.add(type);
@@ -233,6 +234,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     }
 
     private Stream<DeclaredType> allClassesInPackage(Element container) {
+        note("allClassesInPackage " + container);
         Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream().filter(e -> e instanceof TypeElement).flatMap(e -> Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e)));
         Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream().filter(e -> e instanceof PackageElement).map(e -> (PackageElement) e).flatMap(this::allClassesInPackage);
         return Stream.concat(inCurrent, inSubPackages);
