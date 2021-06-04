@@ -10,7 +10,7 @@ import javax.lang.model.type.DeclaredType;
 import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.BOOLEAN;
 
-public interface AccessUtils extends MemberUtils {
+public interface AccessUtils extends MemberUtils, TypeUtils {
 
 
     default String getFieldGetAccess(DeclaredType type, VariableElement field) throws AnnotationProcessorException {
@@ -27,14 +27,14 @@ public interface AccessUtils extends MemberUtils {
 
         boolean get_accessor = getMethods(element).anyMatch(m ->
                 m.getSimpleName().toString().equals("get" + capitalized) &&
-                        m.getReturnType().equals(field.asType()) && m.getParameters().isEmpty());
+                        typeEquals(m.getReturnType(), field.asType()) && m.getParameters().isEmpty());
 
         if (get_accessor)
             return "value." + "get" + capitalized + "()";
         else if (field.asType().getKind() == BOOLEAN) {
             boolean is_accessor = getMethods(element).anyMatch(m ->
                     m.getSimpleName().toString().equals("is" + capitalized) &&
-                            m.getReturnType().equals(field.asType()) && m.getParameters().isEmpty());
+                            typeEquals(m.getReturnType(),field.asType()) && m.getParameters().isEmpty());
             if (is_accessor)
                 return "value." + "is" + capitalized + "()";
             else
@@ -49,7 +49,7 @@ public interface AccessUtils extends MemberUtils {
 
         boolean set_accessor = getMethods(element).anyMatch(m ->
                 m.getSimpleName().toString().equals("set" + capitalized) &&
-                        m.getParameters().size() == 1 && m.getParameters().get(0).asType().equals(field.asType()));
+                        m.getParameters().size() == 1 && typeEquals(m.getParameters().get(0).asType(),field.asType()));
         if (set_accessor)
             return "value." + "set" + capitalized + "($L)";
         else
