@@ -184,6 +184,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             if (type instanceof DeclaredType) {
                 TypeElement element = (TypeElement) ((DeclaredType) type).asElement();
                 AbstractGenerator specialTypeSupport = specials.get(element.getQualifiedName().toString());
+                noteDetailed("getAllSerializableTypes "+element.getQualifiedName().toString());
                 if (specialTypeSupport != null)
                     specialTypeSupport.getAllSerializableTypes(this, (DeclaredType) type, types);
                 else if (nonExistsSerializer(type)) {
@@ -225,7 +226,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             return Collections.singletonList(type);
         else {
             Element packageElement = elementUtils.getPackageOf(element);
-            note("getAllImplementations " + type);
+            noteDetailed("getAllImplementations " + type);
             List<DeclaredType> r = allClassesInPackage(packageElement).filter(t -> typeUtils.directSupertypes(t).contains(type)).collect(toList());
             if (!type.asElement().getModifiers().contains(Modifier.ABSTRACT))
                 r.add(type);
@@ -234,7 +235,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     }
 
     private Stream<DeclaredType> allClassesInPackage(Element container) {
-        note("allClassesInPackage " + container);
+        noteDetailed("allClassesInPackage " + container);
         Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream().filter(e -> e instanceof TypeElement).flatMap(e -> Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e)));
         Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream().filter(e -> e instanceof PackageElement).map(e -> (PackageElement) e).flatMap(this::allClassesInPackage);
         return Stream.concat(inCurrent, inSubPackages);
