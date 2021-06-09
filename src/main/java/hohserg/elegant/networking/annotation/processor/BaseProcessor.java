@@ -1,6 +1,7 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableSet;
+import hohserg.elegant.networking.Refs;
 import hohserg.elegant.networking.utils.PrintUtils;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -44,7 +45,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
             errorAPException(e);
 
         } catch (Throwable e) {
-            String unexpectedMsg = "Unexpected error. Please, report to https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/issues";
+            String unexpectedMsg = "Unexpected error. " + Refs.reportUrlPlea;
             error(unexpectedMsg, e);
             throw new IllegalStateException(unexpectedMsg + " \n", e);
         }
