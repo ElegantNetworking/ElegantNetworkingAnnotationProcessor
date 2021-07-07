@@ -24,11 +24,6 @@ jobs:
       with:
         repository: ElegantNetworking/ElegantNetworkingAnnotationProcessor
         path: ./ElegantNetworkingAnnotationProcessor
-    
-    - uses: actions/checkout@master
-      with:
-        repository: ElegantNetworking/ElegantNetworking_1.12
-        path: ./ElegantNetworking_1.12
 
     - uses: actions/checkout@master
       with:
@@ -45,9 +40,6 @@ jobs:
     
     - name: Grant execute permission for gradlew
       run: chmod +x ./ElegantNetworkingRoot/gradlew
-
-    - name: Setup forge mdk
-      run: ./ElegantNetworkingRoot/gradlew --project-dir ./ElegantNetworkingRoot/ :ElegantNetworking_1.12:setupDecompWorkspace
     
     - name: Build with Gradle
       run: ./ElegantNetworkingRoot/gradlew --project-dir ./ElegantNetworkingRoot/ build
