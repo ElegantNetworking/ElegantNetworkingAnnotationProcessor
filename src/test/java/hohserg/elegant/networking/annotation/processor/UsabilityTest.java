@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import static com.google.testing.compile.CompilationSubject.assertThat;
 
 public class UsabilityTest extends BaseCompilationTest {
-    @Test
+    //@Test
     void doTest() throws IOException, ClassNotFoundException, NoSuchMethodException {
         List<String> inputPackets = getAllFiles(Stream.of("in")).filter(f -> !f.endsWith("_Failure.java")).collect(Collectors.toList());
 
