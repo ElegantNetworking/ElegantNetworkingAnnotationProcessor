@@ -100,7 +100,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        warn("ElegantSerializerProcessor#process/annotations " + annotations);
+        noteDebug("ElegantSerializerProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
 
             if (!maybeModid.isPresent())
@@ -132,7 +132,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                         .collect(toList());
 
 
-                elegantPackets.forEach(e -> noteDetailed(e, "Found elegant packet class"));
+                elegantPackets.forEach(e -> noteDetailed("Found elegant packet class", e));
 
 
                 List<TypeElement> elegantSerializable = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantSerializable_name))
@@ -143,7 +143,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                         .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement ClientToServerPacket or ServerToClientPacket"))
                         .collect(toList());
 
-                elegantSerializable.forEach(e -> noteDetailed(e, "Found elegant serializable class"));
+                elegantSerializable.forEach(e -> noteDetailed("Found elegant serializable class", e));
 
                 elegantSerializable.addAll(elegantPackets);
                 allElegantPackets.addAll(elegantPackets);
@@ -151,7 +151,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 elegantSerializable.forEach(e -> {
                     Map<TypeMirror, List<? extends TypeMirror>> types = new TypeMap<>();
                     getAllSerializableTypes(e.asType(), types);
-                    noteDetailed("Required to serialize " + types);
+                    noteDebug("For " + e.getQualifiedName() + "required to serialize " + types);
 
                     List<MethodSpec> serializationMethods = types.entrySet().stream()
                             .sorted(Comparator.comparing(i -> i.getKey().toString()))
@@ -177,7 +177,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
             if (!allElegantPackets.isEmpty())
                 maybeModid.ifPresent(modid -> {
-                    noteDetailed("Current modid is " + modid);
+                    noteDebug("Current modid is " + modid);
                     allElegantPackets.forEach(e ->
                             writeJavaFile(
                                     e,
@@ -262,7 +262,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             if (type instanceof DeclaredType) {
                 TypeElement element = (TypeElement) ((DeclaredType) type).asElement();
                 AbstractGenerator specialTypeSupport = specials.get(element.getQualifiedName().toString());
-                noteDetailed("getAllSerializableTypes " + element.getQualifiedName().toString());
+                noteDebug("getAllSerializableTypes " + element.getQualifiedName().toString());
                 if (specialTypeSupport != null)
                     specialTypeSupport.getAllSerializableTypes(this, (DeclaredType) type, types);
                 else if (nonExistsSerializer(type)) {
@@ -328,7 +328,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             if (f.test(e))
                 return true;
             else {
-                error(e, errorMsg);
+                error(errorMsg, e);
                 return false;
             }
         };

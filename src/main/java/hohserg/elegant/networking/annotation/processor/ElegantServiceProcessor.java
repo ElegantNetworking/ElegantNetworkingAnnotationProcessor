@@ -79,7 +79,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
     private void writeTimeOffsetBetweenInitAndProcess(long timeOffsetBetweenInitAndProcess) {
-        noteDetailed("Writing time offset between initPackets and process file " + timeOffsetBetweenInitAndProcess);
+        noteDebug("Writing time offset between initPackets and process file " + timeOffsetBetweenInitAndProcess);
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", timeOffsetFileLocation);
 
@@ -117,7 +117,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
                         .collect(toSet());
             }
         } catch (FileNotFoundException e) {
-            noteDetailed(path + " not found, its a first compilation");
+            noteDebug(path + " not found, its a first compilation");
             return new HashSet<>();
         } catch (IOException e) {
             error("Unable to load service file " + path, e);
@@ -132,7 +132,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        warn("ElegantServiceProcessor#process/annotations " + annotations);
+        noteDebug("ElegantServiceProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
             if (isFirstRun && !timeOffsetAlreadyWritten) {
                 timeOffsetAlreadyWritten = true;
@@ -166,10 +166,10 @@ public class ElegantServiceProcessor extends BaseProcessor {
                         .filter(e -> isImplements(e, interfaceName))
                         .collect(toSet());
 
-        noteDetailed("Found follow elements in current round: " + fromRound);
+        noteDebug("Found follow elements in current round: " + fromRound);
 
         existingTypes.addAll(fromRound);
-        noteDetailed("full marked class set: " + existingTypes);
+        noteDebug("full marked class set: " + existingTypes);
 
     }
 
@@ -179,7 +179,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
     private void writeServiceFile(Set<TypeElement> content, String path) {
-        noteDetailed("Writing service file");
+        noteDebug("Writing service file");
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", path, content.toArray(new TypeElement[0]));
 

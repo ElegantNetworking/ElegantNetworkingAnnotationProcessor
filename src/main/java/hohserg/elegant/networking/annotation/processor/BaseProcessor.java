@@ -21,6 +21,7 @@ import java.util.Set;
 public abstract class BaseProcessor extends AbstractProcessor {
     public static String printDetailsOption = "elegantnetworking.printDetails";
     public static String disablePrintElementNameOption = "elegantnetworking.disablePrintElementName";
+    public static String printDebugOption = "elegantnetworking.printDebug";
 
     public final String tmpFolder = "tmp_generated/";
 
@@ -54,10 +55,10 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
 
     public void errorAPException(AnnotationProcessorException e) {
-        error(e.element, prepareMsg(e));
+        error(prepareExceptionMessage(e), e.element);
     }
 
-    private String prepareMsg(AnnotationProcessorException e) {
+    private String prepareExceptionMessage(AnnotationProcessorException e) {
         if (options.containsKey(disablePrintElementNameOption))
             return e.msg;
         else
@@ -73,34 +74,34 @@ public abstract class BaseProcessor extends AbstractProcessor {
         }
     }
 
-    public void noteDetailed(Element e, String msg) {
+    public void noteDebug(String msg, Element... e) {
+        if (options.containsKey(printDebugOption))
+            note(msg, e);
+    }
+
+    public void noteDetailed(String msg, Element... e) {
         if (options.containsKey(printDetailsOption))
-            note(e, msg);
+            note(msg, e);
     }
 
-    public void noteDetailed(String msg) {
-        if (options.containsKey(printDetailsOption))
-            note(msg);
+    public void note(String msg, Element... e) {
+        print(Diagnostic.Kind.NOTE, msg, e);
     }
 
-    public void note(String msg) {
-        messager.printMessage(Diagnostic.Kind.NOTE, msg);
+    public void warn(String msg, Element... e) {
+        print(Diagnostic.Kind.WARNING, msg, e);
     }
 
-    public void note(Element e, String msg) {
-        messager.printMessage(Diagnostic.Kind.NOTE, msg, e);
+    public void error(String msg, Element... e) {
+        print(Diagnostic.Kind.ERROR, msg, e);
     }
 
-    public void warn(String msg) {
-        messager.printMessage(Diagnostic.Kind.WARNING, msg);
-    }
-
-    public void warn(Element e, String msg) {
-        messager.printMessage(Diagnostic.Kind.WARNING, msg, e);
-    }
-
-    public void error(String msg) {
-        messager.printMessage(Diagnostic.Kind.ERROR, msg);
+    public void print(Diagnostic.Kind kind, String msg, Element... e) {
+        if (e.length == 0)
+            messager.printMessage(kind, msg);
+        else
+            for (Element element : e)
+                messager.printMessage(kind, msg, element);
     }
 
     public void error(String msg, Throwable e) {
@@ -109,10 +110,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
         writer.println("Caused by");
         e.printStackTrace(writer);
         writer.flush();
-    }
-
-    public void error(Element e, String msg) {
-        messager.printMessage(Diagnostic.Kind.ERROR, msg, e);
     }
 
     @Override
