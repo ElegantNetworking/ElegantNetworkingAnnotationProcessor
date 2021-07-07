@@ -18,7 +18,7 @@ import java.util.*;
 import static hohserg.elegant.networking.Refs.*;
 import static java.util.stream.Collectors.toSet;
 
-@SupportedAnnotationTypes({ElegantPacket_name, SerializerMark_name})
+@SupportedAnnotationTypes({PacketProviderMark_name, SerializerMark_name})
 public class ElegantServiceProcessor extends BaseProcessor {
 
     public InheritanceUtils inheritanceUtils;
@@ -62,7 +62,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
 
-    public final String timeOffsetFileLocation = "tmp_generated/timeOffsetBetweenInitAndProcess.txt";
+    public final String timeOffsetFileLocation = tmpFolder + "timeOffsetBetweenInitAndProcess.txt";
 
     private Optional<Long> loadTimeOffsetBetweenInitAndProcess() {
         try {
@@ -79,7 +79,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
     private void writeTimeOffsetBetweenInitAndProcess(long timeOffsetBetweenInitAndProcess) {
-        noteDetailed("Writing time offset between init and process file " + timeOffsetBetweenInitAndProcess);
+        noteDetailed("Writing time offset between initPackets and process file " + timeOffsetBetweenInitAndProcess);
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", timeOffsetFileLocation);
 
@@ -94,9 +94,8 @@ public class ElegantServiceProcessor extends BaseProcessor {
 
     private void loadExistingServices() {
         states = ImmutableList.of(
-                initProcessState(ElegantPacket_name, ClientToServerPacket_name),
-                initProcessState(ElegantPacket_name, ServerToClientPacket_name),
-                initProcessState(SerializerMark_name, ISerializer_name)
+                initProcessState(PacketProviderMark_name, IPacketProvider_name),
+                initProcessState(SerializerMark_name, ISerializerBase_name)
         );
     }
 
@@ -133,6 +132,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        warn("ElegantServiceProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
             if (isFirstRun && !timeOffsetAlreadyWritten) {
                 timeOffsetAlreadyWritten = true;
@@ -179,7 +179,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
     private void writeServiceFile(Set<TypeElement> content, String path) {
-        note("Writing service file");
+        noteDetailed("Writing service file");
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", path, content.toArray(new TypeElement[0]));
 

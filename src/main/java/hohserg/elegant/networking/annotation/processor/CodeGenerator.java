@@ -19,8 +19,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static hohserg.elegant.networking.Refs.ISerializer_name;
-import static hohserg.elegant.networking.Refs.SerializerMark_name;
+import static hohserg.elegant.networking.Refs.*;
 import static java.util.stream.Collectors.toList;
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.*;
@@ -349,5 +348,35 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
                 .addStatement("return " + getGenericUnserializeMethodName(typeElement.asType()) + "(buf)");
 
         return unserialize.build();
+    }
+
+    public JavaFile generatePacketProvider(TypeElement e, String modid) {
+        TypeSpec provider = TypeSpec.classBuilder(e.getSimpleName() + "Provider")
+                .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(PacketProviderMark_name))).build())
+                .addModifiers(PUBLIC)
+                .addSuperinterface(ClassName.get(elementUtils.getTypeElement(IPacketProvider_name)))
+                .addMethod(generatePacketClassGetterMethod(e))
+                .addMethod(generateModidGetterMethod(modid))
+                .build();
+
+        return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), provider).build();
+
+    }
+
+    private MethodSpec generateModidGetterMethod(String modid) {
+        return MethodSpec.methodBuilder("modid")
+                .addModifiers(PUBLIC)
+                .returns(String.class)
+                .addStatement("return $S", modid)
+                .build();
+    }
+
+    private MethodSpec generatePacketClassGetterMethod(TypeElement e) {
+        return MethodSpec.methodBuilder("getPacketClass")
+                .addModifiers(PUBLIC)
+                .returns(ParameterizedTypeName.get(ClassName.get(Class.class), WildcardTypeName.subtypeOf(ClassName.get(elementUtils.getTypeElement(IByteBufSerializable_name)))))
+                .addStatement("return $L.class", e.getQualifiedName())
+                .build();
+
     }
 }

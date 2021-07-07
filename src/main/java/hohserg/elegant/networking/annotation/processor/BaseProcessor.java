@@ -22,6 +22,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
     public static String printDetailsOption = "elegantnetworking.printDetails";
     public static String disablePrintElementNameOption = "elegantnetworking.disablePrintElementName";
 
+    public final String tmpFolder = "tmp_generated/";
+
     public Filer filer;
     public Elements elementUtils;
     public Messager messager;

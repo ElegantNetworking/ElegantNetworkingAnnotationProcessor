@@ -5,7 +5,6 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import hohserg.elegant.networking.annotation.processor.code.generator.AbstractGenerator;
 import hohserg.elegant.networking.annotation.processor.code.generator.TypeUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -17,7 +16,12 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Writer;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -27,13 +31,13 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.ElementKind.*;
 
-@SupportedAnnotationTypes({ElegantPacket_name, ElegantSerializable_name})
+@SupportedAnnotationTypes({ElegantPacket_name, ElegantSerializable_name, Mod_name_1_8_plus, Mod_name_1_7_minus})
 public class ElegantSerializerProcessor extends BaseProcessor implements TypeUtils {
 
-    private Set<TypeElement> packetsFromService;
-    private Set<String> serializersFromService;
-    public InheritanceUtils inheritanceUtils;
+    private Set<TypeElement> allElegantPackets = new HashSet<>();
+    private Optional<String> maybeModid = Optional.empty();
 
+    private InheritanceUtils inheritanceUtils;
     private CodeGenerator codeGenerator;
 
     @Override
@@ -42,6 +46,8 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         inheritanceUtils = new InheritanceUtils(typeUtils);
         specials = initSpecials();
         codeGenerator = new CodeGenerator(typeUtils, elementUtils, specials, messager);
+
+        maybeModid = loadCachedModid();
     }
 
     private ImmutableMap<String, AbstractGenerator> initSpecials() {
@@ -94,8 +100,28 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        warn("ElegantSerializerProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
-            if (IsExistsAnnotatedInCurrentRound(annotations)) {
+
+            if (!maybeModid.isPresent())
+                Stream.of(Mod_name_1_8_plus, Mod_name_1_7_minus).map(elementUtils::getTypeElement).filter(Objects::nonNull).findAny()
+                        .ifPresent(Mod_element -> {
+                            if (annotations.contains(Mod_element)) {
+                                maybeModid = roundEnv.getElementsAnnotatedWith(Mod_element).iterator().next()
+                                        .getAnnotationMirrors()
+                                        .stream()
+                                        .filter(am -> am.getAnnotationType().asElement() == Mod_element)
+                                        .flatMap(am -> am.getElementValues()
+                                                .entrySet()
+                                                .stream()
+                                                .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
+                                                .map(e -> e.getValue().getValue().toString())
+                                        ).findAny();
+                                maybeModid.ifPresent(this::saveCachedModid);
+                            }
+                        });
+
+            if (isExistsSerializableInCurrentRound(annotations, ElegantPacket_name, ElegantSerializable_name)) {
 
                 List<TypeElement> elegantPackets = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantPacket_name))
                         .stream()
@@ -120,6 +146,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 elegantSerializable.forEach(e -> noteDetailed(e, "Found elegant serializable class"));
 
                 elegantSerializable.addAll(elegantPackets);
+                allElegantPackets.addAll(elegantPackets);
 
                 elegantSerializable.forEach(e -> {
                     Map<TypeMirror, List<? extends TypeMirror>> types = new TypeMap<>();
@@ -137,22 +164,73 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                 }
                             })
                             .collect(toList());
-                    JavaFile javaFile = codeGenerator.generateSerializerClass(e, serializationMethods);
 
 
-                    try {
-                        javaFile.writeTo(filer);
-                    } catch (IOException exception) {
-                        error("Unable to write serializer class for elegant packet " + e, exception);
-                    }
+                    writeJavaFile(
+                            e,
+                            codeGenerator.generateSerializerClass(e, serializationMethods),
+
+                            "Unable to write serializer class for elegant packet "
+                    );
                 });
             }
+
+            if (!allElegantPackets.isEmpty())
+                maybeModid.ifPresent(modid -> {
+                    noteDetailed("Current modid is " + modid);
+                    allElegantPackets.forEach(e ->
+                            writeJavaFile(
+                                    e,
+                                    codeGenerator.generatePacketProvider(e, modid),
+                                    "Unable to write packet provider class for elegant packet "
+                            )
+                    );
+                    allElegantPackets.clear();
+                });
+
         });
         return false;
     }
 
-    public boolean IsExistsAnnotatedInCurrentRound(Set<? extends TypeElement> annotations) {
-        return getSupportedAnnotationTypes().stream().map(elementUtils::getTypeElement).anyMatch(annotations::contains);
+    private void writeJavaFile(TypeElement basedOn, JavaFile javaFile, String failureMessage) {
+        try {
+            javaFile.writeTo(filer);
+        } catch (IOException exception) {
+            error(failureMessage + basedOn, exception);
+        }
+    }
+
+    private final String cachedModidLocation = tmpFolder + "cachedModid.txt";
+
+    private Optional<String> loadCachedModid() {
+        try {
+            FileObject resourceForRead = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
+
+            try (
+                    InputStream inputStream = resourceForRead.openInputStream();
+                    Scanner s = new Scanner(inputStream).useDelimiter("\\A")) {
+                return s.hasNext() ? Optional.of(s.next()) : Optional.empty();
+            }
+        } catch (IOException e) {
+            return Optional.empty();
+        }
+    }
+
+    private void saveCachedModid(String modid) {
+        try {
+            FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
+
+            try (Writer writer = resourceForWrite.openWriter()) {
+                writer.write(modid);
+                writer.flush();
+            }
+        } catch (IOException e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Cannot write cachedModid file: " + e);
+        }
+    }
+
+    public boolean isExistsSerializableInCurrentRound(Set<? extends TypeElement> existsAnnotations, String... requiredAnnotations) {
+        return Arrays.stream(requiredAnnotations).map(elementUtils::getTypeElement).filter(Objects::nonNull).anyMatch(existsAnnotations::contains);
     }
 
     private Stream<MethodSpec> generateMethodsForType(TypeMirror type, List<? extends TypeMirror> implementations) {
@@ -184,7 +262,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             if (type instanceof DeclaredType) {
                 TypeElement element = (TypeElement) ((DeclaredType) type).asElement();
                 AbstractGenerator specialTypeSupport = specials.get(element.getQualifiedName().toString());
-                noteDetailed("getAllSerializableTypes "+element.getQualifiedName().toString());
+                noteDetailed("getAllSerializableTypes " + element.getQualifiedName().toString());
                 if (specialTypeSupport != null)
                     specialTypeSupport.getAllSerializableTypes(this, (DeclaredType) type, types);
                 else if (nonExistsSerializer(type)) {
@@ -226,7 +304,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
             return Collections.singletonList(type);
         else {
             Element packageElement = elementUtils.getPackageOf(element);
-            noteDetailed("getAllImplementations " + type);
+            //noteDetailed("getAllImplementations " + type);
             List<DeclaredType> r = allClassesInPackage(packageElement).filter(t -> typeUtils.directSupertypes(t).contains(type)).collect(toList());
             if (!type.asElement().getModifiers().contains(Modifier.ABSTRACT))
                 r.add(type);
@@ -235,7 +313,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     }
 
     private Stream<DeclaredType> allClassesInPackage(Element container) {
-        noteDetailed("allClassesInPackage " + container);
+        //noteDetailed("allClassesInPackage " + container);
         Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream().filter(e -> e instanceof TypeElement).flatMap(e -> Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e)));
         Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream().filter(e -> e instanceof PackageElement).map(e -> (PackageElement) e).flatMap(this::allClassesInPackage);
         return Stream.concat(inCurrent, inSubPackages);
