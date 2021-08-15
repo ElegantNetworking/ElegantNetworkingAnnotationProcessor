@@ -39,5 +39,6 @@ hs_err_pid*
 .settings/
 *.launch
 /repo/
+/repo1/
 
 .jqwik-database
