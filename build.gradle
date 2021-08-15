@@ -15,7 +15,7 @@ buildscript {
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
-apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 apply plugin: "io.freefair.lombok"
 
@@ -48,7 +48,7 @@ dependencies {
 test {
     useJUnitPlatform()
 }
-test.onlyIf{false} //turn off until migration to other compilation framework
+test.onlyIf { false } //turn off until migration to other compilation framework
 
 shadowJar {
     relocate 'com.google', 'shadow.com.google'
@@ -60,48 +60,34 @@ shadowJar {
     classifier = null
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-    archives shadowJar
-}
-
-signing {
-    required { project.hasProperty("signing.keyId") }
-    sign sourcesJar
-    sign javadocJar
-    sign shadowJar
-}
-
-uploadArchives {
+publishing {
     repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
+        maven {
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
             def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
-            repository(url: releasesRepoUrl) {
-                if (project.hasProperty("ossrhUsername"))
-                    authentication userName: "$ossrhUsername", password: "$ossrhPassword"
-            }
+            url = localRepo
+            if (project.hasProperty("ossrhUsername"))
+                credentials {
+                    username = ossrhUsername
+                    password = ossrhPassword
+                }
+        }
+    }
 
-            pom.artifactId = 'annotation-processor'
-            pom.project {
-                name 'ElegantNetworking Annotation Processor'
-                packaging 'jar'
-                description 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
-                url 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                name = 'annotation-processor'
+                description = 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
+                url = 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
+                from components.java
 
                 scm {
                     connection = 'scm:git:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
@@ -124,12 +110,16 @@ uploadArchives {
                     }
                 }
             }
-            pom.whenConfigured {
-                p ->
-                    p.dependencies = p.dependencies.findAll {
-                        dep -> false
-                    }
+            pom.withXml {
+                asNode().dependencies.'*'.each() {
+                    it.parent().remove(it)
+                }
             }
         }
     }
+}
+
+signing {
+    required { project.hasProperty("signing.keyId") }
+    sign publishing.publications.mavenJava
 }
