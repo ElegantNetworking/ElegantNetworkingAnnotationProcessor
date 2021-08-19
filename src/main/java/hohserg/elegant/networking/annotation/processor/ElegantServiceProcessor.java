@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.nio.file.NoSuchFileException;
 import java.util.*;
 
 import static hohserg.elegant.networking.Refs.*;
@@ -116,7 +117,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
                         .filter(e -> isMarkedBy(e, annotatedWith))
                         .collect(toSet());
             }
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             noteDebug(path + " not found, its a first compilation");
             return new HashSet<>();
         } catch (IOException e) {
