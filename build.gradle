@@ -30,22 +30,32 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.guava:guava:21.0'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile 'com.squareup:javapoet:1.13.0'
-    compile project(':ElegantNetworkingCommon')
+    implementation 'com.google.guava:guava:21.0'
+    implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation 'com.squareup:javapoet:1.13.0'
+    implementation project(':ElegantNetworkingCommon')
 
     if (JavaVersion.current() <= JavaVersion.VERSION_1_8) {
-        testCompile files(Jvm.current().getToolsJar())
+        testImplementation files(Jvm.current().getToolsJar())
     }
-    testCompile 'commons-io:commons-io:2.8.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.7.1'
-    testCompile 'com.google.testing.compile:compile-testing:0.19'
+    testImplementation 'commons-io:commons-io:2.8.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testImplementation 'com.google.testing.compile:compile-testing:0.19'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
-    testCompile "net.jqwik:jqwik:1.4.0"
+    testImplementation "net.jqwik:jqwik:1.4.0"
+
+
+    testImplementation "io.netty:netty-all:4.1.25.Final"
+    testImplementation "org.apache.commons:commons-lang3:3.5"
+    testImplementation 'org.projectlombok:lombok:1.18.20'
+}
+
+configurations {
+    emptyness
 }
 
 test {
+    jvmArgs "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED" //for java 16
     useJUnitPlatform()
 }
 test.onlyIf { false } //turn off until migration to other compilation framework
@@ -69,25 +79,35 @@ java {
 publishing {
     repositories {
         maven {
+            def localRepo = new File(project.getProjectDir(), 'repo')
+            localRepo.deleteDir()
+
             def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
             def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
-            url = localRepo
-            if (project.hasProperty("ossrhUsername"))
+            def localRepoUrl = localRepo.getAbsolutePath()
+
+            def usedLocation = releasesRepoUrl
+            url = usedLocation
+
+            if (usedLocation != localRepoUrl && project.hasProperty("ossrhUsername")) {
                 credentials {
                     username = ossrhUsername
                     password = ossrhPassword
                 }
+            }
         }
     }
 
     publications {
-        mavenJava(MavenPublication) {
+        mavenJava(MavenPublication) { publication ->
+            project.shadow.component(publication)
+
+            artifactId 'annotation-processor'
+
             pom {
                 name = 'annotation-processor'
                 description = 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
                 url = 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
-                from components.java
 
                 scm {
                     connection = 'scm:git:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
@@ -110,11 +130,7 @@ publishing {
                     }
                 }
             }
-            pom.withXml {
-                asNode().dependencies.'*'.each() {
-                    it.parent().remove(it)
-                }
-            }
+
         }
     }
 }
