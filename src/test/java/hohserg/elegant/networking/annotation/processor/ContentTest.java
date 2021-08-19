@@ -40,12 +40,7 @@ public class ContentTest extends BaseCompilationTest {
                     String testName = resourceName.substring(inPath.length() + 1, resourceName.length() - 5);
                     return DynamicTest.dynamicTest(testName, () -> {
                         Compilation compilation = Compiler.javac().withProcessors(new ElegantSerializerProcessor(), new ElegantServiceProcessor())
-                                .withClasspath(ImmutableList.of(
-                                        //uh-oh: todo: wut?
-                                        new File("C:\\Users\\hohserg\\.gradle\\caches\\modules-2\\files-2.1\\io.netty\\netty-all\\4.1.25.Final\\d0626cd3108294d1d58c05859add27b4ef21f83b\\netty-all-4.1.25.Final.jar"),
-                                        new File("C:\\Users\\hohserg\\.gradle\\caches\\modules-2\\files-2.1\\com.google.guava\\guava\\30.0-jre\\8ddbc8769f73309fe09b54c5951163f10b0d89fa\\guava-30.0-jre.jar"),
-                                        new File("C:\\Users\\hohserg\\Documents\\GitHub\\ElegantNetworking1\\ElegantNetworkingCommon\\build\\libs\\ElegantNetworkingCommon-1.0.jar")
-                                ))
+                                .withClasspathFrom(this.getClass().getClassLoader())
                                 .compile(
                                         ImmutableList.<JavaFileObject>builder()
                                                 .add(JavaFileObjects.forResource(resourceName))
