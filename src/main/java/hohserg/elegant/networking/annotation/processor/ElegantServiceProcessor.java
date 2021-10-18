@@ -184,9 +184,11 @@ public class ElegantServiceProcessor extends BaseProcessor {
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", path, content.toArray(new TypeElement[0]));
 
+            List<String> sortedContent = content.stream().map(TypeElement::getQualifiedName).map(CharSequence::toString).sorted().collect(Collectors.toList());
+
             try (Writer writer = resourceForWrite.openWriter()) {
-                for (TypeElement typeElement : content)
-                    writer.write(typeElement.getQualifiedName() + "\n");
+                for (String typeElement : sortedContent)
+                    writer.write(typeElement + "\n");
                 writer.flush();
             }
         } catch (IOException e) {
