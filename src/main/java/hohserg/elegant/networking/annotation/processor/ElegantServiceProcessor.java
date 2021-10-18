@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static hohserg.elegant.networking.Refs.*;
 import static java.util.stream.Collectors.toSet;
@@ -50,10 +51,13 @@ public class ElegantServiceProcessor extends BaseProcessor {
         else {
             hack = new Thread(() -> {
                 try {
+                    noteDebug("hack started");
                     Thread.sleep(timeOffsetBetweenInitAndProcess.get() * 2);
                     synchronized (ElegantServiceProcessor.this) {
+                        noteDebug("hack");
                         states.forEach(state -> saveService(state.getInterfaceName(), state.getExistingTypes()));
                     }
+                    noteDebug("hack finished");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -75,6 +79,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
                 return s.hasNext() ? Optional.of(Long.parseLong(s.next())) : Optional.empty();
             }
         } catch (IOException e) {
+            noteDebug(timeOffsetFileLocation + " not found, its a first compilation");
             return Optional.empty();
         }
     }
@@ -133,23 +138,29 @@ public class ElegantServiceProcessor extends BaseProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        noteDebug("ElegantServiceProcessor#process/annotations " + annotations);
-        handleUnexpectedErrors(() -> {
-            if (isFirstRun && !timeOffsetAlreadyWritten) {
-                timeOffsetAlreadyWritten = true;
-                writeTimeOffsetBetweenInitAndProcess(System.currentTimeMillis() - startTime);
-            }
-            if (hack != null)
-                hack.interrupt();
+        synchronized (ElegantServiceProcessor.this) {
+            noteDebug("ElegantServiceProcessor#process/annotations " + annotations);
+            handleUnexpectedErrors(() -> {
 
-            for (ProcessState state : states) {
-                TypeElement annotationElement = elementUtils.getTypeElement(state.getAnnotation());
-                if (annotations.contains(annotationElement))
-                    processService(roundEnv, annotationElement, state.getInterfaceName(), state.getExistingTypes());
-            }
-            if (roundEnv.processingOver())
-                states.forEach(state -> saveService(state.getInterfaceName(), state.getExistingTypes()));
-        });
+                if (hack != null) {
+                    hack.interrupt();
+                    noteDebug("hack stopped");
+                }
+
+                if (isFirstRun && !timeOffsetAlreadyWritten) {
+                    timeOffsetAlreadyWritten = true;
+                    writeTimeOffsetBetweenInitAndProcess(System.currentTimeMillis() - startTime);
+                }
+
+                for (ProcessState state : states) {
+                    TypeElement annotationElement = elementUtils.getTypeElement(state.getAnnotation());
+                    if (annotations.contains(annotationElement))
+                        processService(roundEnv, annotationElement, state.getInterfaceName(), state.getExistingTypes());
+                }
+                if (roundEnv.processingOver())
+                    states.forEach(state -> saveService(state.getInterfaceName(), state.getExistingTypes()));
+            });
+        }
 
         return false;
     }
@@ -180,7 +191,7 @@ public class ElegantServiceProcessor extends BaseProcessor {
     }
 
     private void writeServiceFile(Set<TypeElement> content, String path) {
-        noteDebug("Writing service file");
+        noteDebug("Writing service file " + path);
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", path, content.toArray(new TypeElement[0]));
 
