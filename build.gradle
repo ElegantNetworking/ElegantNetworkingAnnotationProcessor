@@ -20,7 +20,7 @@ apply plugin: 'signing'
 apply plugin: "io.freefair.lombok"
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '3.10'
+version '3.11'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8
