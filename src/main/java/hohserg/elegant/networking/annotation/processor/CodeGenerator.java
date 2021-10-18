@@ -25,13 +25,15 @@ import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.Modifier.*;
 
 public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, TypeUtils, FunctionalUtils {
-    public CodeGenerator(Types typeUtils, Elements elementUtils, Map<String, AbstractGenerator> specials, Messager messager) {
+    public CodeGenerator(ElegantSerializerProcessor processor, Types typeUtils, Elements elementUtils, Map<String, AbstractGenerator> specials, Messager messager) {
+        this.processor = processor;
         this.typeUtils = typeUtils;
         this.elementUtils = elementUtils;
         this.specials = specials;
         this.messager = messager;
     }
 
+    private ElegantSerializerProcessor processor;
     private Types typeUtils;
     private Elements elementUtils;
     private final Map<String, AbstractGenerator> specials;
@@ -309,7 +311,7 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     JavaFile generateSerializerClass(TypeElement e, List<MethodSpec> serializationMethods) {
         ClassName packet = ClassName.get(e);
-        TypeSpec serializer = TypeSpec.classBuilder(e.getSimpleName() + "Serializer")
+        TypeSpec serializer = TypeSpec.classBuilder(getCompanionName(e, "Serializer"))
                 .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(SerializerMark_name))).addMember("packetClass", packet.canonicalName() + ".class").build())
                 .addModifiers(PUBLIC)
                 .addSuperinterface(ParameterizedTypeName.get(ClassName.get(elementUtils.getTypeElement(ISerializer_name)), packet))
@@ -351,7 +353,7 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
     }
 
     public JavaFile generatePacketProvider(TypeElement e, String modid) {
-        TypeSpec provider = TypeSpec.classBuilder(e.getSimpleName() + "Provider")
+        TypeSpec provider = TypeSpec.classBuilder(getCompanionName(e, "Provider"))
                 .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(PacketProviderMark_name))).build())
                 .addModifiers(PUBLIC)
                 .addSuperinterface(ClassName.get(elementUtils.getTypeElement(IPacketProvider_name)))
@@ -361,6 +363,10 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
         return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), provider).build();
 
+    }
+
+    public String getCompanionName(TypeElement e, String suffix) {
+        return (e.getNestingKind().isNested() ? e.getEnclosingElement().getSimpleName() + "$" : "") + e.getSimpleName() + suffix;
     }
 
     private MethodSpec generateModidGetterMethod(String modid) {

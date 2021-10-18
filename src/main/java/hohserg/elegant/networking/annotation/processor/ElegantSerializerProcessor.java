@@ -45,7 +45,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         super.init(processingEnv);
         inheritanceUtils = new InheritanceUtils(typeUtils);
         specials = initSpecials();
-        codeGenerator = new CodeGenerator(typeUtils, elementUtils, specials, messager);
+        codeGenerator = new CodeGenerator(this, typeUtils, elementUtils, specials, messager);
 
         maybeModid = loadCachedModid();
     }
