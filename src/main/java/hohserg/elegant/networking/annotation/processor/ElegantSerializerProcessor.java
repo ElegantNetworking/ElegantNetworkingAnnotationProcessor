@@ -176,11 +176,15 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
             if (!allElegantPackets.isEmpty())
                 maybeModid.ifPresent(modid -> {
+                    String channel = modid.substring(0, 20);
+                    if (modid.length() > 20)
+                        warn("Channel name must be no longer that 20. Found: " + modid + ". Used: " + channel);
+
                     noteDebug("Current modid is " + modid);
                     allElegantPackets.forEach(e ->
                             writeJavaFile(
                                     e,
-                                    codeGenerator.generatePacketProvider(e, modid),
+                                    codeGenerator.generatePacketProvider(e, channel),
                                     "Unable to write packet provider class for elegant packet "
                             )
                     );
