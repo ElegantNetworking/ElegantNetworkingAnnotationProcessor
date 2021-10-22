@@ -101,6 +101,8 @@ publishing {
     publications {
         mavenJava(MavenPublication) { publication ->
             project.shadow.component(publication)
+            artifact sourcesJar
+            artifact javadocJar
 
             artifactId 'annotation-processor'
 
