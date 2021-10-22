@@ -187,7 +187,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                     allElegantPackets.clear();
                 });
 
-            if(roundEnv.processingOver())
+            if (roundEnv.processingOver())
                 maybeModid.ifPresent(this::saveCachedModid);
 
         });
@@ -214,6 +214,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 return s.hasNext() ? Optional.of(s.next()) : Optional.empty();
             }
         } catch (IOException e) {
+            errorDebug("Unable to load modid cache", e);
             return Optional.empty();
         }
     }
