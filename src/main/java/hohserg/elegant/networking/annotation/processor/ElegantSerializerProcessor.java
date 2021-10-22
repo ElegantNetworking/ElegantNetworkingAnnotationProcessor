@@ -117,7 +117,6 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                                 .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
                                                 .map(e -> e.getValue().getValue().toString())
                                         ).findAny();
-                                maybeModid.ifPresent(this::saveCachedModid);
                             }
                         });
 
@@ -187,6 +186,9 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                     );
                     allElegantPackets.clear();
                 });
+
+            if(roundEnv.processingOver())
+                maybeModid.ifPresent(this::saveCachedModid);
 
         });
         return false;
