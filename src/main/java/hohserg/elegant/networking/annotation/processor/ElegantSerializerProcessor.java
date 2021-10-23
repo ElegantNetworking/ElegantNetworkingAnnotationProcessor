@@ -168,7 +168,10 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                         .collect(toList());
 
 
-                elegantPackets.forEach(e -> noteDetailed("Found elegant packet class", e));
+                elegantPackets.forEach(e -> {
+                    noteDetailed("Found elegant packet class", e);
+                    validateChannel(e.getAnnotation(ElegantPacket.class).channel(), i -> warn(i, e));
+                });
 
 
                 List<TypeElement> elegantSerializable = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantSerializable_name))
