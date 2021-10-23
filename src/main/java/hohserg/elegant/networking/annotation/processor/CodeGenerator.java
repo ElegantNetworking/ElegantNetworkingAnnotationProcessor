@@ -318,6 +318,7 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
                 .addMethod(generateMainSerializeMethod(e, packet))
                 .addMethod(generateMainUnserializeMethod(e, packet))
                 .addMethods(serializationMethods)
+                .addOriginatingElement(e)
                 .build();
 
         return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), serializer).build();
@@ -359,6 +360,7 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
                 .addSuperinterface(ClassName.get(elementUtils.getTypeElement(IPacketProvider_name)))
                 .addMethod(generatePacketClassGetterMethod(e))
                 .addMethod(generateModidGetterMethod(modid))
+                .addOriginatingElement(e)
                 .build();
 
         return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), provider).build();
