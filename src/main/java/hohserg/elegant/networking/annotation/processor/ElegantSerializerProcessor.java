@@ -176,7 +176,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
             if (!allElegantPackets.isEmpty())
                 maybeModid.ifPresent(modid -> {
-                    String channel = modid.substring(0, 20);
+                    String channel = modid.substring(0, Math.min(modid.length(), 20));
                     if (modid.length() > 20)
                         warn("Channel name must be no longer that 20. Found: " + modid + ". Used: " + channel);
 
@@ -218,7 +218,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 return s.hasNext() ? Optional.of(s.next()) : Optional.empty();
             }
         } catch (IOException e) {
-            errorDebug("Unable to load modid cache", e);
+            noteDebug("Unable to load modid cache: " + e.getMessage());
             return Optional.empty();
         }
     }

@@ -74,11 +74,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
         }
     }
 
-    public void errorDebug(String msg, Throwable e) {
-        if (options.containsKey(printDebugOption))
-            error(msg, e);
-    }
-
     public void noteDebug(String msg, Element... e) {
         if (options.containsKey(printDebugOption))
             note(msg, e);
