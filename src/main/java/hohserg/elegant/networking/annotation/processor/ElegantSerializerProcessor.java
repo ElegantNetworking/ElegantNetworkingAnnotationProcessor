@@ -5,6 +5,9 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import hohserg.elegant.networking.annotation.processor.code.generator.AbstractGenerator;
 import hohserg.elegant.networking.annotation.processor.code.generator.TypeUtils;
+import hohserg.elegant.networking.api.ElegantPacket;
+import hohserg.elegant.networking.utils.ChannelValidator;
+import lombok.Value;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -23,10 +26,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static hohserg.elegant.networking.Refs.*;
+import static hohserg.elegant.networking.utils.ChannelValidator.validateChannel;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static javax.lang.model.element.ElementKind.*;
@@ -35,7 +40,38 @@ import static javax.lang.model.element.ElementKind.*;
 public class ElegantSerializerProcessor extends BaseProcessor implements TypeUtils {
 
     private Set<TypeElement> allElegantPackets = new HashSet<>();
-    private Optional<String> maybeModid = Optional.empty();
+    private MaybeModid maybeModid = MaybeModid.None;
+
+    private interface MaybeModid {
+        void ifPresent(Consumer<String> f);
+
+        @Value
+        class LoadedFromCache implements MaybeModid {
+            String value;
+
+            @Override
+            public void ifPresent(Consumer<String> f) {
+                f.accept(value);
+            }
+        }
+
+        @Value
+        class FoundInRound implements MaybeModid {
+            String value;
+
+            @Override
+            public void ifPresent(Consumer<String> f) {
+                f.accept(value);
+            }
+        }
+
+        MaybeModid None = new MaybeModid() {
+            @Override
+            public void ifPresent(Consumer<String> f) {
+            }
+        };
+
+    }
 
     private InheritanceUtils inheritanceUtils;
     private CodeGenerator codeGenerator;
@@ -103,11 +139,11 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         noteDebug("ElegantSerializerProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
 
-            if (!maybeModid.isPresent())
+            if (!(maybeModid instanceof MaybeModid.FoundInRound))
                 Stream.of(Mod_name_1_8_plus, Mod_name_1_7_minus).map(elementUtils::getTypeElement).filter(Objects::nonNull).findAny()
                         .ifPresent(Mod_element -> {
                             if (annotations.contains(Mod_element)) {
-                                maybeModid = roundEnv.getElementsAnnotatedWith(Mod_element).iterator().next()
+                                roundEnv.getElementsAnnotatedWith(Mod_element).iterator().next()
                                         .getAnnotationMirrors()
                                         .stream()
                                         .filter(am -> am.getAnnotationType().asElement() == Mod_element)
@@ -115,8 +151,9 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                                 .entrySet()
                                                 .stream()
                                                 .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
-                                                .map(e -> e.getValue().getValue().toString())
-                                        ).findAny();
+                                                .map(e -> e.getValue().getValue().toString()))
+                                        .findAny()
+                                        .ifPresent(modid -> maybeModid = new MaybeModid.FoundInRound(modid));
                             }
                         });
 
@@ -176,9 +213,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
             if (!allElegantPackets.isEmpty())
                 maybeModid.ifPresent(modid -> {
-                    String channel = modid.substring(0, Math.min(modid.length(), 20));
-                    if (modid.length() > 20)
-                        warn("Channel name must be no longer that 20. Found: " + modid + ". Used: " + channel);
+                    String channel = validateChannel(modid, this::warn);
 
                     noteDebug("Current modid is " + modid);
                     allElegantPackets.forEach(e ->
@@ -208,18 +243,18 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     private final String cachedModidLocation = tmpFolder + "cachedModid.txt";
 
-    private Optional<String> loadCachedModid() {
+    private MaybeModid loadCachedModid() {
         try {
             FileObject resourceForRead = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
 
             try (
                     InputStream inputStream = resourceForRead.openInputStream();
                     Scanner s = new Scanner(inputStream).useDelimiter("\\A")) {
-                return s.hasNext() ? Optional.of(s.next()) : Optional.empty();
+                return s.hasNext() ? new MaybeModid.LoadedFromCache(s.next()) : MaybeModid.None;
             }
         } catch (IOException e) {
             noteDebug("Unable to load modid cache: " + e.getMessage());
-            return Optional.empty();
+            return MaybeModid.None;
         }
     }
 
