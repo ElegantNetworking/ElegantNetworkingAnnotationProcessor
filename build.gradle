@@ -15,7 +15,6 @@ buildscript {
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
-apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: "io.freefair.lombok"
 
@@ -30,19 +29,19 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.guava:guava:21.0'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile 'com.squareup:javapoet:1.13.0'
-    compile project(':ElegantNetworkingCommon')
+    implementation 'com.google.guava:guava:21.0'
+    implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation 'com.squareup:javapoet:1.13.0'
+    implementation project(':ElegantNetworkingCommon')
 
     if (JavaVersion.current() <= JavaVersion.VERSION_1_8) {
-        testCompile files(Jvm.current().getToolsJar())
+        testImplementation files(Jvm.current().getToolsJar())
     }
-    testCompile 'commons-io:commons-io:2.8.0'
-    testCompile 'org.junit.jupiter:junit-jupiter-api:5.7.1'
-    testCompile 'com.google.testing.compile:compile-testing:0.19'
+    testImplementation 'commons-io:commons-io:2.8.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.1'
+    testImplementation 'com.google.testing.compile:compile-testing:0.19'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
-    testCompile "net.jqwik:jqwik:1.4.0"
+    testImplementation "net.jqwik:jqwik:1.4.0"
 }
 
 test {
@@ -81,55 +80,4 @@ signing {
     sign sourcesJar
     sign javadocJar
     sign shadowJar
-}
-
-uploadArchives {
-    repositories {
-        mavenDeployer {
-            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-            def localRepo = 'file://localhost/' + new File(project.getProjectDir(), 'repo').getAbsolutePath()
-            repository(url: releasesRepoUrl) {
-                if (project.hasProperty("ossrhUsername"))
-                    authentication userName: "$ossrhUsername", password: "$ossrhPassword"
-            }
-
-            pom.artifactId = 'annotation-processor'
-            pom.project {
-                name 'ElegantNetworking Annotation Processor'
-                packaging 'jar'
-                description 'This is a annotation processor for ElegantNetworking. Intended for code-generation of packet serializers'
-                url 'https://github.com/ElegantNetworking/ElegantNetworkingRoot'
-
-                scm {
-                    connection = 'scm:git:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
-                    developerConnection = 'scm:git:git@github.com:https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor.git'
-                    url = 'https://github.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor'
-                }
-
-                licenses {
-                    license {
-                        name = 'GNU Lesser General Public License v3.0'
-                        url = 'https://raw.githubusercontent.com/ElegantNetworking/ElegantNetworkingAnnotationProcessor/master/LICENSE.md'
-                    }
-                }
-
-                developers {
-                    developer {
-                        id = 'hohserg'
-                        name = 'hohserg'
-                        email = 'hohserg1@yandex.ru'
-                    }
-                }
-            }
-            pom.whenConfigured {
-                p ->
-                    p.dependencies = p.dependencies.findAll {
-                        dep -> false
-                    }
-            }
-        }
-    }
 }
