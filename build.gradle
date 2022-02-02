@@ -32,7 +32,7 @@ dependencies {
     implementation 'com.google.guava:guava:21.0'
     implementation 'org.apache.commons:commons-lang3:3.5'
     implementation 'com.squareup:javapoet:1.13.0'
-    implementation project(':ElegantNetworkingCommon')
+    implementation project(':_ElegantNetworkingCommon')
 
     if (JavaVersion.current() <= JavaVersion.VERSION_1_8) {
         testImplementation files(Jvm.current().getToolsJar())
