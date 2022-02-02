@@ -119,6 +119,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedOptions() {
-        return ImmutableSet.of(printDetailsOption, disablePrintElementNameOption);
+        return ImmutableSet.of(printDetailsOption, printDebugOption, disablePrintElementNameOption);
     }
 }
