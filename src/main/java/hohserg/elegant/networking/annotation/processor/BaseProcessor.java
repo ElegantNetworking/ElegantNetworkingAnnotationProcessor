@@ -22,6 +22,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     public static String printDetailsOption = "elegantnetworking.printDetails";
     public static String disablePrintElementNameOption = "elegantnetworking.disablePrintElementName";
     public static String printDebugOption = "elegantnetworking.printDebug";
+    public static String useWarningForNoteOption = "elegantnetworking.warningInsteadNote";
 
     public final String tmpFolder = "tmp_generated/";
 
@@ -85,7 +86,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
     }
 
     public void note(String msg, Element... e) {
-        print(Diagnostic.Kind.NOTE, msg, e);
+        print(
+                options.containsKey(useWarningForNoteOption) ? Diagnostic.Kind.WARNING : Diagnostic.Kind.NOTE,
+                (options.containsKey(useWarningForNoteOption) ? "Note: " : "") + msg,
+                e
+        );
     }
 
     public void warn(String msg, Element... e) {
@@ -119,6 +124,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedOptions() {
-        return ImmutableSet.of(printDetailsOption, printDebugOption, disablePrintElementNameOption);
+        return ImmutableSet.of(printDetailsOption, printDebugOption, disablePrintElementNameOption, useWarningForNoteOption);
     }
 }
