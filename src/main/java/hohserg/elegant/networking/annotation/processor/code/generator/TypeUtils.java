@@ -43,10 +43,21 @@ public interface TypeUtils {
         else {
             if (a instanceof DeclaredType && b instanceof DeclaredType)
                 return getRawType((DeclaredType) a).equals(getRawType((DeclaredType) b)) &&
-                        ((DeclaredType) a).getTypeArguments().equals(((DeclaredType) b).getTypeArguments());
+                        listEquals(((DeclaredType) a).getTypeArguments(), ((DeclaredType) b).getTypeArguments());
             else
                 return a.equals(b);
         }
+    }
+
+    default boolean listEquals(List<? extends TypeMirror> a, List<? extends TypeMirror> b) {
+        if (a.size() == b.size()) {
+            for (int i = 0; i < a.size(); i++)
+                if (!typeEquals(a.get(i), b.get(i)))
+                    return false;
+
+            return true;
+        } else
+            return false;
     }
 
     default int uniqueHash(TypeMirror t) {
