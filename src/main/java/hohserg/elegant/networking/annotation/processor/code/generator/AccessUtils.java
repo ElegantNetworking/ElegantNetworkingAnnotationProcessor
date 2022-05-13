@@ -34,7 +34,7 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
         else if (field.asType().getKind() == BOOLEAN) {
             boolean is_accessor = getMethods(element).anyMatch(m ->
                     m.getSimpleName().toString().equals("is" + capitalized) &&
-                            typeEquals(m.getReturnType(),field.asType()) && m.getParameters().isEmpty());
+                            typeEquals(m.getReturnType(), field.asType()) && m.getParameters().isEmpty());
             if (is_accessor)
                 return "value." + "is" + capitalized + "()";
             else
@@ -49,7 +49,7 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
 
         boolean set_accessor = getMethods(element).anyMatch(m ->
                 m.getSimpleName().toString().equals("set" + capitalized) &&
-                        m.getParameters().size() == 1 && typeEquals(m.getParameters().get(0).asType(),field.asType()));
+                        m.getParameters().size() == 1 && typeEquals(m.getParameters().get(0).asType(), field.asType()));
         if (set_accessor)
             return "value." + "set" + capitalized + "($L)";
         else
@@ -68,6 +68,6 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
     }
 
     default boolean isLombokValue(VariableElement f) {
-        return ((TypeElement) f.getEnclosingElement()).getAnnotationMirrors().stream().anyMatch(a -> a.getAnnotationType().toString().equals("lombok.Value"));
+        return f.getEnclosingElement().getAnnotationMirrors().stream().anyMatch(a -> a.getAnnotationType().toString().equals("lombok.Value"));
     }
 }
