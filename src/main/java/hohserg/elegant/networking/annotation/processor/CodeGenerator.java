@@ -236,12 +236,12 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
         return new InheritanceUtils(typeUtils).getAllInterfaces(type).anyMatch(e -> e == elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
                 elementUtils.getAllMembers((TypeElement) type.asElement())
                         .stream().anyMatch(e -> {
-                    if (e.getKind() == CONSTRUCTOR) {
-                        List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
-                        return (parameterTypes.size() == 1 && parameterTypes.get(0) == elementUtils.getTypeElement(byteBuf.canonicalName()).asType());
-                    } else
-                        return false;
-                });
+                            if (e.getKind() == CONSTRUCTOR) {
+                                List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
+                                return (parameterTypes.size() == 1 && parameterTypes.get(0) == elementUtils.getTypeElement(byteBuf.canonicalName()).asType());
+                            } else
+                                return false;
+                        });
     }
 
     private MethodSpec genericSingleSerializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
