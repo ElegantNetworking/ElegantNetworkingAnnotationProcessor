@@ -170,8 +170,12 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
                 List<TypeMirror> constructorSignature = c.getParameters().stream().map(Element::asType).collect(toList());
 
                 return signatureEquals(constructorSignature, finalFields);
-            }))
-                throw new AnnotationProcessorException(element, "Constructor for final fields not found. Required " + finalFields);
+            })) {
+                if (finalFields.isEmpty())
+                    throw new AnnotationProcessorException(element, "Required no args constructor");
+                else
+                    throw new AnnotationProcessorException(element, "Required constructor for final fields: " + finalFields);
+            }
 
             builder.addCode("$T value = new $T(", type, type);
             for (int i = 0; i < finalFields.size(); i++) {
