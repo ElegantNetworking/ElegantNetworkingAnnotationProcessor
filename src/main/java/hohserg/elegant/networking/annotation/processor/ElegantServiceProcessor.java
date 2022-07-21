@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.io.Writer;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static hohserg.elegant.networking.Refs.*;
 import static java.util.stream.Collectors.toSet;
@@ -185,8 +186,12 @@ public class ElegantServiceProcessor extends BaseProcessor {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", path, content.toArray(new TypeElement[0]));
 
             try (Writer writer = resourceForWrite.openWriter()) {
-                for (TypeElement typeElement : content)
-                    writer.write(typeElement.getQualifiedName() + "\n");
+                for (String line : content.stream()
+                        .map(typeElement -> typeElement.getQualifiedName() + "\n")
+                        .sorted()
+                        .collect(Collectors.toList()))
+                    writer.write(line);
+
                 writer.flush();
             }
         } catch (IOException e) {
