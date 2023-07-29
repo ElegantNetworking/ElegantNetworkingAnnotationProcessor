@@ -2,7 +2,6 @@ package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableSet;
 import hohserg.elegant.networking.Refs;
-import hohserg.elegant.networking.utils.PrintUtils;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;

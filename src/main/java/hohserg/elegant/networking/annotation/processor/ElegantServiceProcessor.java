@@ -1,7 +1,6 @@
 package hohserg.elegant.networking.annotation.processor;
 
 import com.google.common.collect.ImmutableList;
-import hohserg.elegant.networking.utils.ServiceUtils;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
