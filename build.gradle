@@ -20,7 +20,7 @@ apply plugin: 'signing'
 apply plugin: "io.freefair.lombok"
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '3.10'
+version '3.16'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8
@@ -94,10 +94,11 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             artifactId "annotation-processor"
-            from components.java
+            //from components.java
 
             artifact sourcesJar
             artifact javadocJar
+            artifact shadowJar
 
             pom {
                 name = "ElegantNetworking Annotation Processor"
@@ -126,13 +127,17 @@ publishing {
                     }
                 }
             }
+            pom.withXml {
+                def pomNode = asNode()
+                pomNode.dependencies.'*'.each() {
+                    it.parent().remove(it)
+                }
+            }
         }
     }
 }
 
 signing {
     required { project.hasProperty("signing.keyId") }
-    sign sourcesJar
-    sign javadocJar
-    sign shadowJar
+    sign publishing.publications.mavenJava
 }
