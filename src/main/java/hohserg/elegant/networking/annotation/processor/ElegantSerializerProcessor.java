@@ -34,8 +34,8 @@ import static javax.lang.model.element.ElementKind.*;
 @SupportedAnnotationTypes({ElegantPacket_name, ElegantSerializable_name, Mod_name_1_8_plus, Mod_name_1_7_minus})
 public class ElegantSerializerProcessor extends BaseProcessor implements TypeUtils {
 
-    private Set<TypeElement> allElegantPackets = new HashSet<>();
-    private Optional<String> maybeModid = Optional.empty();
+    private Set<TypeElement> previouslyVisitedPackets = new HashSet<>();
+    private String maybeModid = null;
 
     private InheritanceUtils inheritanceUtils;
     private CodeGenerator codeGenerator;
@@ -103,7 +103,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         noteDebug("ElegantSerializerProcessor#process/annotations " + annotations);
         handleUnexpectedErrors(() -> {
 
-            if (!maybeModid.isPresent())
+            if (maybeModid == null)
                 Stream.of(Mod_name_1_8_plus, Mod_name_1_7_minus).map(elementUtils::getTypeElement).filter(Objects::nonNull).findAny()
                         .ifPresent(Mod_element -> {
                             if (annotations.contains(Mod_element)) {
@@ -116,8 +116,13 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                                 .stream()
                                                 .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
                                                 .map(e -> e.getValue().getValue().toString())
-                                        ).findAny();
-                                maybeModid.ifPresent(this::saveCachedModid);
+                                        )
+                                        .findAny()
+                                        .orElse(null);
+                                if (maybeModid != null) {
+                                    saveCachedModid();
+                                    generateProvidersForPreviousVisited();
+                                }
                             }
                         });
 
@@ -146,7 +151,12 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 elegantSerializable.forEach(e -> noteDetailed("Found elegant serializable class", e));
 
                 elegantSerializable.addAll(elegantPackets);
-                allElegantPackets.addAll(elegantPackets);
+
+                if (maybeModid == null) {
+                    previouslyVisitedPackets.addAll(elegantPackets);
+                } else {
+                    elegantPackets.forEach(this::generateProvider);
+                }
 
                 elegantSerializable.forEach(e -> {
                     Map<TypeMirror, List<? extends TypeMirror>> types = new TypeMap<>();
@@ -174,20 +184,6 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                     );
                 });
             }
-
-            if (!allElegantPackets.isEmpty())
-                maybeModid.ifPresent(modid -> {
-                    noteDebug("Current modid is " + modid);
-                    allElegantPackets.forEach(e ->
-                            writeJavaFile(
-                                    e,
-                                    codeGenerator.generatePacketProvider(e, modid),
-                                    "Unable to write packet provider class for elegant packet "
-                            )
-                    );
-                    allElegantPackets.clear();
-                });
-
         });
         return false;
     }
@@ -202,31 +198,44 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     private final String cachedModidLocation = tmpFolder + "cachedModid.txt";
 
-    private Optional<String> loadCachedModid() {
+    private String loadCachedModid() {
         try {
             FileObject resourceForRead = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
 
-            try (
-                    InputStream inputStream = resourceForRead.openInputStream();
-                    Scanner s = new Scanner(inputStream).useDelimiter("\\A")) {
-                return s.hasNext() ? Optional.of(s.next()) : Optional.empty();
+            try (InputStream inputStream = resourceForRead.openInputStream();
+                 Scanner s = new Scanner(inputStream).useDelimiter("\\A")) {
+                return s.hasNext() ? s.next() : null;
             }
         } catch (IOException e) {
-            return Optional.empty();
+            return null;
         }
     }
 
-    private void saveCachedModid(String modid) {
+    private void saveCachedModid() {
         try {
             FileObject resourceForWrite = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
 
             try (Writer writer = resourceForWrite.openWriter()) {
-                writer.write(modid);
+                writer.write(maybeModid);
                 writer.flush();
             }
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Cannot write cachedModid file: " + e);
         }
+    }
+
+    private void generateProvidersForPreviousVisited() {
+        noteDebug("Current modid is " + maybeModid);
+        previouslyVisitedPackets.forEach(this::generateProvider);
+        previouslyVisitedPackets.clear();
+    }
+
+    private void generateProvider(TypeElement packetElement) {
+        writeJavaFile(
+                packetElement,
+                codeGenerator.generatePacketProvider(packetElement, maybeModid),
+                "Unable to write packet provider class for elegant packet "
+        );
     }
 
     public boolean isExistsSerializableInCurrentRound(Set<? extends TypeElement> existsAnnotations, String... requiredAnnotations) {
