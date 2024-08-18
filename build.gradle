@@ -8,7 +8,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
         classpath "io.freefair.gradle:lombok-plugin:6.0.0-m2"
     }
 }
@@ -20,7 +20,7 @@ apply plugin: 'signing'
 apply plugin: "io.freefair.lombok"
 
 group 'io.gitlab.hohserg.elegant.networking'
-version '3.16'
+version '3.17'
 archivesBaseName = 'annotation-processor'
 
 sourceCompatibility = 1.8
@@ -59,7 +59,7 @@ shadowJar {
 
     classifier = null
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -123,7 +123,7 @@ publishing {
                     developer {
                         id = 'hohserg'
                         name = 'hohserg'
-                        email = 'hohserg1@yandex.ru'
+                        email = 'hohserg1@gmail.com'
                     }
                 }
             }
