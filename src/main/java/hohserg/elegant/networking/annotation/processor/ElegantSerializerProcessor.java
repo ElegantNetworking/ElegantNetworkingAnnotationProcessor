@@ -145,7 +145,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                         .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantSerializable_name).getSimpleName() + " can be applied only to classes and interfaces"))
                         .map(e -> ((TypeElement) e))
                         .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant serializable class must be public"))
-                        .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement ClientToServerPacket or ServerToClientPacket"))
+                        .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement IByteBufSerializable"))
                         .collect(toList());
 
                 elegantSerializable.forEach(e -> noteDetailed("Found elegant serializable class", e));
@@ -199,6 +199,10 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     private final String cachedModidLocation = tmpFolder + "cachedModid.txt";
 
     private String loadCachedModid() {
+        String strictModid = options.get(strictChannelNameOption);
+        if (strictModid != null)
+            return strictModid;
+
         try {
             FileObject resourceForRead = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", cachedModidLocation);
 
@@ -269,13 +273,18 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
     public void getAllSerializableTypes(TypeMirror type, Map<TypeMirror, List<? extends TypeMirror>> types) {
         if (!types.containsKey(type)) {
             if (type instanceof DeclaredType) {
-                TypeElement element = (TypeElement) ((DeclaredType) type).asElement();
+                DeclaredType declaredType = (DeclaredType) type;
+                TypeElement element = (TypeElement) declaredType.asElement();
+                visitingStack.visit(element);
                 AbstractGenerator specialTypeSupport = specials.get(element.getQualifiedName().toString());
                 noteDebug("getAllSerializableTypes " + element.getQualifiedName().toString());
                 if (specialTypeSupport != null)
-                    specialTypeSupport.getAllSerializableTypes(this, (DeclaredType) type, types);
-                else if (nonExistsSerializer(type)) {
-                    List<DeclaredType> allImplementations = getAllImplementations(((DeclaredType) type));
+                    specialTypeSupport.getAllSerializableTypes(this, declaredType, types);
+                else if (codeGenerator.haveSerializationOverride(declaredType)) {
+                    noteDetailed("getAllSerializableTypes haveSerializationOverride " + element.getQualifiedName().toString());
+                    types.put(type, Collections.singletonList(type));
+                } else if (nonExistsSerializer(type)) {
+                    List<DeclaredType> allImplementations = getAllImplementations(declaredType);
                     types.put(type, allImplementations);
                     Set<TypeMirror> fieldTypes = element.getEnclosedElements().stream()
                             .filter(e -> e.getKind() == FIELD)
@@ -285,12 +294,13 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                                     throw new AnnotationProcessorException(e, "All type parameters must be passed");//"Parameterizable type must be parameterized" xD
                             })
                             .map(Element::asType)
-                            .map(refineParameterizedTypes((DeclaredType) type))
+                            .map(refineParameterizedTypes(declaredType))
                             .filter(this::nonExistsSerializer)
                             .collect(toSet());
                     fieldTypes.forEach(t -> getAllSerializableTypes(t, types));
                     allImplementations.forEach(t -> getAllSerializableTypes(t, types));
                 }
+                visitingStack.back();
             } else if (type instanceof ArrayType) {
                 types.put(type, Collections.emptyList());
                 getAllSerializableTypes(((ArrayType) type).getComponentType(), types);
@@ -321,10 +331,27 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         }
     }
 
+    private static int ii = 0;
+
     private Stream<DeclaredType> allClassesInPackage(Element container) {
-        //noteDetailed("allClassesInPackage " + container);
-        Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream().filter(e -> e instanceof TypeElement).flatMap(e -> Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e)));
-        Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream().filter(e -> e instanceof PackageElement).map(e -> (PackageElement) e).flatMap(this::allClassesInPackage);
+        noteDetailed(ii + " allClassesInPackage " + container);
+        noteDetailed(ii + " allClassesInPackage getEnclosedElements " + container.getEnclosedElements());
+        ii++;
+
+        Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream()
+                .filter(e -> e instanceof TypeElement)
+                .flatMap(e -> {
+                    visitingStack.visit(e);
+                    Stream<DeclaredType> r = Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e));
+                    visitingStack.back();
+                    return r;
+                });
+
+        Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream()
+                .filter(e -> e instanceof PackageElement)
+                .map(e -> (PackageElement) e)
+                .flatMap(this::allClassesInPackage);
+
         return Stream.concat(inCurrent, inSubPackages);
     }
 

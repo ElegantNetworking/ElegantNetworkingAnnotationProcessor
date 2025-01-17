@@ -22,6 +22,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
     public static String disablePrintElementNameOption = "elegantnetworking.disablePrintElementName";
     public static String printDebugOption = "elegantnetworking.printDebug";
     public static String useWarningForNoteOption = "elegantnetworking.warningInsteadNote";
+    public static String strictChannelNameOption = "elegantnetworking.strictChannelName";
 
     public final String tmpFolder = "tmp_generated/";
 
@@ -41,6 +42,8 @@ public abstract class BaseProcessor extends AbstractProcessor {
         typeUtils = processingEnv.getTypeUtils();
     }
 
+    protected VisitingStack visitingStack = new VisitingStack();
+
     protected void handleUnexpectedErrors(RunWithException f) {
         try {
             f.run();
@@ -48,7 +51,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
             errorAPException(e);
 
         } catch (Throwable e) {
-            String unexpectedMsg = "Unexpected error. " + Refs.reportUrlPlea;
+            String unexpectedMsg = "Unexpected error. " + Refs.reportUrlPlea + "\n" + visitingStack;
             error(unexpectedMsg, e);
             throw new IllegalStateException(unexpectedMsg + " \n", e);
         }
@@ -123,6 +126,6 @@ public abstract class BaseProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedOptions() {
-        return ImmutableSet.of(printDetailsOption, printDebugOption, disablePrintElementNameOption, useWarningForNoteOption);
+        return ImmutableSet.of(printDetailsOption, printDebugOption, disablePrintElementNameOption, useWarningForNoteOption, strictChannelNameOption);
     }
 }
