@@ -232,13 +232,13 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
     }
 
 
-    private boolean haveSerializationOverride(DeclaredType type) {
-        return new InheritanceUtils(typeUtils).getAllInterfaces(type).anyMatch(e -> e == elementUtils.getTypeElement("hohserg.elegant.networking.api.IByteBufSerializable").asType()) &&
+    public boolean haveSerializationOverride(DeclaredType type) {
+        return new InheritanceUtils(typeUtils).getAllInterfaces(type).anyMatch(e -> typeUtils.asElement(e) == elementUtils.getTypeElement(IByteBufSerializable_name)) &&
                 elementUtils.getAllMembers((TypeElement) type.asElement())
                         .stream().anyMatch(e -> {
                             if (e.getKind() == CONSTRUCTOR) {
                                 List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
-                                return (parameterTypes.size() == 1 && parameterTypes.get(0) == elementUtils.getTypeElement(byteBuf.canonicalName()).asType());
+                                return (parameterTypes.size() == 1 && typeUtils.asElement(parameterTypes.get(0)) == elementUtils.getTypeElement(byteBuf.canonicalName()));
                             } else
                                 return false;
                         });
