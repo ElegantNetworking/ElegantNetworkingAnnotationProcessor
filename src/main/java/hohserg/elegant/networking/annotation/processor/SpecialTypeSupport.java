@@ -220,11 +220,16 @@ public abstract class SpecialTypeSupport {
         Types typeUtils;
         Elements elementUtils;
 
+        String isPresent;
+        String get;
+        String someFactory;
+        String noneFactory;
+
         @Override
         public void generateSerializer(MethodSpec.Builder builder, DeclaredType type) {
-            builder.beginControlFlow("if(value.isPresent())");
+            builder.beginControlFlow("if(value." + isPresent + "())");
             builder.addStatement("acc.writeBoolean(true)");
-            builder.addStatement(getGenericSerializeMethodName(type.getTypeArguments().get(0)) + "(value.get(),acc)");
+            builder.addStatement(getGenericSerializeMethodName(type.getTypeArguments().get(0)) + "(value." + get + "(),acc)");
             builder.nextControlFlow("else");
             builder.addStatement("acc.writeBoolean(false)");
             builder.endControlFlow();
@@ -234,9 +239,9 @@ public abstract class SpecialTypeSupport {
         public void generateUnserializer(MethodSpec.Builder builder, DeclaredType type) {
             builder.addStatement("boolean isPresent = buf.readBoolean()");
             builder.beginControlFlow("if(isPresent)");
-            builder.addStatement("return Optional.of(" + getGenericUnserializeMethodName(type.getTypeArguments().get(0)) + "(buf))");
+            builder.addStatement("return " + someFactory + "(" + getGenericUnserializeMethodName(type.getTypeArguments().get(0)) + "(buf))");
             builder.nextControlFlow("else");
-            builder.addStatement("return Optional.empty()");
+            builder.addStatement("return " + noneFactory);
             builder.endControlFlow();
         }
     }

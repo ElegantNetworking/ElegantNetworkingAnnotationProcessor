@@ -75,7 +75,8 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         specialsBuilder.put(ImmutableMap_name, SpecialTypeSupport.immutableMapSpecial(typeUtils, elementUtils, ImmutableMap_name));//using string contant because shadowing of library
         specialsBuilder.put(EnumMap.class.getCanonicalName(), SpecialTypeSupport.commonMapSpecial(typeUtils, elementUtils, EnumMap.class.getCanonicalName(), type -> "new " + EnumMap.class.getCanonicalName() + "(" + type.getTypeArguments().get(0) + ".class)", "$L.put($L,$L)", "$L"));
 
-        specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils));
+        specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils, "isPresent", "get", "Optional.of", "Optional.empty()"));
+        specialsBuilder.put("scala.Option", new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils, "isDefined", "get", "scala.Option.apply", "scala.Option"));
 
         specialsBuilder.put(Pair_name, new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, Pair_name));
 
