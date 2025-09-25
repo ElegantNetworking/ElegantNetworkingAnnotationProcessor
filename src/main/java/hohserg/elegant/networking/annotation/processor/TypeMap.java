@@ -30,6 +30,11 @@ public class TypeMap<V> implements Map<TypeMirror, V>, FunctionalUtils {
         public int hashCode() {
             return uniqueHash(typeMirror);
         }
+
+        @Override
+        public String toString() {
+            return typeMirror.toString();
+        }
     }
 
     @Override
@@ -93,5 +98,10 @@ public class TypeMap<V> implements Map<TypeMirror, V>, FunctionalUtils {
     @Override
     public Set<Entry<TypeMirror, V>> entrySet() {
         return back.entrySet().stream().map(leftMapper(k -> k.typeMirror)).collect(toSet());
+    }
+
+    @Override
+    public String toString() {
+        return back.toString();
     }
 }
