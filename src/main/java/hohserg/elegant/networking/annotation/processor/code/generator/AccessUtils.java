@@ -3,9 +3,11 @@ package hohserg.elegant.networking.annotation.processor.code.generator;
 import hohserg.elegant.networking.annotation.processor.AnnotationProcessorException;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import java.util.Optional;
 
 import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.type.TypeKind.BOOLEAN;
@@ -23,23 +25,21 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
 
     default String getterAccess(DeclaredType type, VariableElement field) throws AnnotationProcessorException {
         TypeElement element = (TypeElement) type.asElement();
-        String capitalized = StringUtils.capitalize(field.getSimpleName().toString());
+        String fieldName = field.getSimpleName().toString();
+        String capitalized = StringUtils.capitalize(fieldName);
 
-        boolean get_accessor = getMethods(element).anyMatch(m ->
-                m.getSimpleName().toString().equals("get" + capitalized) &&
-                        typeEquals(m.getReturnType(), field.asType()) && m.getParameters().isEmpty());
+        Optional<ExecutableElement> get_accessor = getMethods(element)
+            .filter(m ->
+                (m.getSimpleName().toString().equals("get" + capitalized)
+                    || m.getSimpleName().toString().equals(fieldName)
+                    || field.asType().getKind() == BOOLEAN && m.getSimpleName().toString().equals("is" + capitalized)
+                ) && typeEquals(m.getReturnType(), field.asType()) && m.getParameters().isEmpty()
+            )
+            .findAny();
 
-        if (get_accessor)
-            return "value." + "get" + capitalized + "()";
-        else if (field.asType().getKind() == BOOLEAN) {
-            boolean is_accessor = getMethods(element).anyMatch(m ->
-                    m.getSimpleName().toString().equals("is" + capitalized) &&
-                            typeEquals(m.getReturnType(), field.asType()) && m.getParameters().isEmpty());
-            if (is_accessor)
-                return "value." + "is" + capitalized + "()";
-            else
-                throw new AnnotationProcessorException(field, "Private fields must have getters: " + element.getSimpleName() + "#" + field.getSimpleName());
-        } else
+        if (get_accessor.isPresent())
+            return "value." + get_accessor.get().getSimpleName() + "()";
+        else
             throw new AnnotationProcessorException(field, "Private fields must have getters: " + element.getSimpleName() + "#" + field.getSimpleName());
     }
 
@@ -48,8 +48,8 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
         String capitalized = StringUtils.capitalize(field.getSimpleName().toString());
 
         boolean set_accessor = getMethods(element).anyMatch(m ->
-                m.getSimpleName().toString().equals("set" + capitalized) &&
-                        m.getParameters().size() == 1 && typeEquals(m.getParameters().get(0).asType(), field.asType()));
+            m.getSimpleName().toString().equals("set" + capitalized) &&
+                m.getParameters().size() == 1 && typeEquals(m.getParameters().get(0).asType(), field.asType()));
         if (set_accessor)
             return "value." + "set" + capitalized + "($L)";
         else
@@ -58,9 +58,9 @@ public interface AccessUtils extends MemberUtils, TypeUtils {
 
     default boolean isPrivate(VariableElement f) {
         return f.getModifiers().contains(PRIVATE) ||
-                !f.getModifiers().contains(PUBLIC) &&
-                        !f.getModifiers().contains(PROTECTED) &&
-                        isLombokValue(f);
+            !f.getModifiers().contains(PUBLIC) &&
+                !f.getModifiers().contains(PROTECTED) &&
+                isLombokValue(f);
     }
 
     default boolean isFinal(VariableElement f) {

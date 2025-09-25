@@ -76,7 +76,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         specialsBuilder.put(EnumMap.class.getCanonicalName(), SpecialTypeSupport.commonMapSpecial(typeUtils, elementUtils, EnumMap.class.getCanonicalName(), type -> "new " + EnumMap.class.getCanonicalName() + "(" + type.getTypeArguments().get(0) + ".class)", "$L.put($L,$L)", "$L"));
 
         specialsBuilder.put(Optional.class.getCanonicalName(), new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils, "isPresent", "get", "Optional.of", "Optional.empty()"));
-        specialsBuilder.put("scala.Option", new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils, "isDefined", "get", "scala.Option.apply", "scala.Option"));
+        specialsBuilder.put("scala.Option", new SpecialTypeSupport.OptionalSupport(typeUtils, elementUtils, "isDefined", "get", "scala.Option.apply", "scala.Option.empty()"));
 
         specialsBuilder.put(Pair_name, new SpecialTypeSupport.PairSupport(typeUtils, elementUtils, Pair_name));
 
@@ -106,48 +106,48 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
             if (maybeModid == null)
                 Stream.of(Mod_name_1_8_plus, Mod_name_1_7_minus).map(elementUtils::getTypeElement).filter(Objects::nonNull).findAny()
-                        .ifPresent(Mod_element -> {
-                            if (annotations.contains(Mod_element)) {
-                                maybeModid = roundEnv.getElementsAnnotatedWith(Mod_element).iterator().next()
-                                        .getAnnotationMirrors()
-                                        .stream()
-                                        .filter(am -> am.getAnnotationType().asElement() == Mod_element)
-                                        .flatMap(am -> am.getElementValues()
-                                                .entrySet()
-                                                .stream()
-                                                .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
-                                                .map(e -> e.getValue().getValue().toString())
-                                        )
-                                        .findAny()
-                                        .orElse(null);
-                                if (maybeModid != null) {
-                                    saveCachedModid();
-                                    generateProvidersForPreviousVisited();
-                                }
+                    .ifPresent(Mod_element -> {
+                        if (annotations.contains(Mod_element)) {
+                            maybeModid = roundEnv.getElementsAnnotatedWith(Mod_element).iterator().next()
+                                .getAnnotationMirrors()
+                                .stream()
+                                .filter(am -> am.getAnnotationType().asElement() == Mod_element)
+                                .flatMap(am -> am.getElementValues()
+                                    .entrySet()
+                                    .stream()
+                                    .filter(e -> e.getKey().getSimpleName().toString().equals("modid") || e.getKey().getSimpleName().toString().equals("value"))
+                                    .map(e -> e.getValue().getValue().toString())
+                                )
+                                .findAny()
+                                .orElse(null);
+                            if (maybeModid != null) {
+                                saveCachedModid();
+                                generateProvidersForPreviousVisited();
                             }
-                        });
+                        }
+                    });
 
             if (isExistsSerializableInCurrentRound(annotations, ElegantPacket_name, ElegantSerializable_name)) {
 
                 List<TypeElement> elegantPackets = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantPacket_name))
-                        .stream()
-                        .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantPacket_name).getSimpleName() + " can be applied only to classes and interfaces"))
-                        .map(e -> ((TypeElement) e))
-                        .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant packet class must be public"))
-                        .filter(validate(isHaveInterface(ClientToServerPacket_name, ServerToClientPacket_name), "The elegant packet class must implement ClientToServerPacket or ServerToClientPacket"))
-                        .collect(toList());
+                    .stream()
+                    .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantPacket_name).getSimpleName() + " can be applied only to classes and interfaces"))
+                    .map(e -> ((TypeElement) e))
+                    .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant packet class must be public"))
+                    .filter(validate(isHaveInterface(ClientToServerPacket_name, ServerToClientPacket_name), "The elegant packet class must implement ClientToServerPacket or ServerToClientPacket"))
+                    .collect(toList());
 
 
                 elegantPackets.forEach(e -> noteDetailed("Found elegant packet class", e));
 
 
                 List<TypeElement> elegantSerializable = roundEnv.getElementsAnnotatedWith(elementUtils.getTypeElement(ElegantSerializable_name))
-                        .stream()
-                        .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantSerializable_name).getSimpleName() + " can be applied only to classes and interfaces"))
-                        .map(e -> ((TypeElement) e))
-                        .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant serializable class must be public"))
-                        .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement IByteBufSerializable"))
-                        .collect(toList());
+                    .stream()
+                    .filter(validate(e -> e.getKind() == CLASS || e.getKind() == INTERFACE || e.getKind() == ENUM, "@" + elementUtils.getTypeElement(ElegantSerializable_name).getSimpleName() + " can be applied only to classes and interfaces"))
+                    .map(e -> ((TypeElement) e))
+                    .filter(validate(e -> e.getModifiers().contains(Modifier.PUBLIC), "The elegant serializable class must be public"))
+                    .filter(validate(isHaveInterface(IByteBufSerializable_name), "The elegant serializable class must implement IByteBufSerializable"))
+                    .collect(toList());
 
                 elegantSerializable.forEach(e -> noteDetailed("Found elegant serializable class", e));
 
@@ -162,26 +162,26 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 elegantSerializable.forEach(e -> {
                     Map<TypeMirror, List<? extends TypeMirror>> types = new TypeMap<>();
                     getAllSerializableTypes(e.asType(), types);
-                    noteDebug("For " + e.getQualifiedName() + "required to serialize " + types);
+                    noteDebug("For " + e.getQualifiedName() + " required to serialize " + types);
 
                     List<MethodSpec> serializationMethods = types.entrySet().stream()
-                            .sorted(Comparator.comparing(i -> i.getKey().toString()))
-                            .flatMap(i -> {
-                                try {
-                                    return generateMethodsForType(i.getKey(), i.getValue());
-                                } catch (AnnotationProcessorException exception) {
-                                    errorAPException(exception);
-                                    return Stream.empty();
-                                }
-                            })
-                            .collect(toList());
+                        .sorted(Comparator.comparing(i -> i.getKey().toString()))
+                        .flatMap(i -> {
+                            try {
+                                return generateMethodsForType(i.getKey(), i.getValue());
+                            } catch (AnnotationProcessorException exception) {
+                                errorAPException(exception);
+                                return Stream.empty();
+                            }
+                        })
+                        .collect(toList());
 
 
                     writeJavaFile(
-                            e,
-                            codeGenerator.generateSerializerClass(e, serializationMethods),
+                        e,
+                        codeGenerator.generateSerializerClass(e, serializationMethods),
 
-                            "Unable to write serializer class for elegant packet "
+                        "Unable to write serializer class for elegant packet "
                     );
                 });
             }
@@ -237,9 +237,9 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
 
     private void generateProvider(TypeElement packetElement) {
         writeJavaFile(
-                packetElement,
-                codeGenerator.generatePacketProvider(packetElement, maybeModid),
-                "Unable to write packet provider class for elegant packet "
+            packetElement,
+            codeGenerator.generatePacketProvider(packetElement, maybeModid),
+            "Unable to write packet provider class for elegant packet "
         );
     }
 
@@ -287,7 +287,8 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                 } else if (nonExistsSerializer(type)) {
                     List<DeclaredType> allImplementations = getAllImplementations(declaredType);
                     types.put(type, allImplementations);
-                    Set<TypeMirror> fieldTypes = element.getEnclosedElements().stream()
+                    if (element.getKind() != ENUM) {
+                        Set<TypeMirror> fieldTypes = element.getEnclosedElements().stream()
                             .filter(e -> e.getKind() == FIELD)
                             .filter(e -> !e.getModifiers().contains(Modifier.STATIC) && !e.getModifiers().contains(Modifier.TRANSIENT))
                             .peek(e -> {
@@ -298,7 +299,8 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
                             .map(refineParameterizedTypes(declaredType))
                             .filter(this::nonExistsSerializer)
                             .collect(toSet());
-                    fieldTypes.forEach(t -> getAllSerializableTypes(t, types));
+                        fieldTypes.forEach(t -> getAllSerializableTypes(t, types));
+                    }
                     allImplementations.forEach(t -> getAllSerializableTypes(t, types));
                 }
                 visitingStack.back();
@@ -313,9 +315,9 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         TypeElement holder = elementUtils.getTypeElement(ISerializer_name);
         String methodName = codeGenerator.getGenericSerializeMethodName(type);
         return elementUtils
-                .getAllMembers(holder)
-                .stream()
-                .noneMatch(m -> m.getKind() == METHOD && m.getSimpleName().toString().equals(methodName));
+            .getAllMembers(holder)
+            .stream()
+            .noneMatch(m -> m.getKind() == METHOD && m.getSimpleName().toString().equals(methodName));
     }
 
     private List<DeclaredType> getAllImplementations(DeclaredType type) {
@@ -325,7 +327,7 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         else {
             Element packageElement = elementUtils.getPackageOf(element);
             //noteDetailed("getAllImplementations " + type);
-            List<DeclaredType> r = allClassesInPackage(packageElement).filter(t -> typeUtils.directSupertypes(t).contains(type)).collect(toList());
+            List<DeclaredType> r = allClassesInPackage(packageElement).filter(t -> typeUtils.directSupertypes(t).stream().anyMatch(tt -> typeEquals(tt, type))).collect(toList());
             if (!type.asElement().getModifiers().contains(Modifier.ABSTRACT))
                 r.add(type);
             return r;
@@ -340,18 +342,18 @@ public class ElegantSerializerProcessor extends BaseProcessor implements TypeUti
         ii++;
 
         Stream<DeclaredType> inCurrent = container.getEnclosedElements().stream()
-                .filter(e -> e instanceof TypeElement)
-                .flatMap(e -> {
-                    visitingStack.visit(e);
-                    Stream<DeclaredType> r = Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e));
-                    visitingStack.back();
-                    return r;
-                });
+            .filter(e -> e instanceof TypeElement)
+            .flatMap(e -> {
+                visitingStack.visit(e);
+                Stream<DeclaredType> r = Stream.concat(Stream.of(((DeclaredType) e.asType())), allClassesInPackage(e));
+                visitingStack.back();
+                return r;
+            });
 
         Stream<DeclaredType> inSubPackages = container.getEnclosedElements().stream()
-                .filter(e -> e instanceof PackageElement)
-                .map(e -> (PackageElement) e)
-                .flatMap(this::allClassesInPackage);
+            .filter(e -> e instanceof PackageElement)
+            .map(e -> (PackageElement) e)
+            .flatMap(this::allClassesInPackage);
 
         return Stream.concat(inCurrent, inSubPackages);
     }

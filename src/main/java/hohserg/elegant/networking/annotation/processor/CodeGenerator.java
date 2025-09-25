@@ -77,9 +77,9 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec arraySerializer(ArrayType type) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericSerializeMethodName(type))
-                .returns(void.class)
-                .addParameter(TypeName.get(type), "value")
-                .addParameter(byteBuf, "acc");
+            .returns(void.class)
+            .addParameter(TypeName.get(type), "value")
+            .addParameter(byteBuf, "acc");
 
         builder.addStatement("acc.writeInt(value.length)");
 
@@ -93,8 +93,8 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec arrayUnserializer(ArrayType type) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericUnserializeMethodName(type))
-                .returns(TypeName.get(type))
-                .addParameter(byteBuf, "buf");
+            .returns(TypeName.get(type))
+            .addParameter(byteBuf, "buf");
 
         TypeName elementTypeName = TypeName.get(type.getComponentType());
 
@@ -114,17 +114,17 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec enumSerializer(DeclaredType type) {
         return MethodSpec.methodBuilder(getGenericSerializeMethodName(type))
-                .returns(void.class)
-                .addParameter(TypeName.get(type), "value")
-                .addParameter(byteBuf, "acc")
-                .addStatement("acc.writeByte(value.ordinal())")
-                .build();
+            .returns(void.class)
+            .addParameter(TypeName.get(type), "value")
+            .addParameter(byteBuf, "acc")
+            .addStatement("acc.writeByte(value.ordinal())")
+            .build();
     }
 
     private MethodSpec enumUnserializer(DeclaredType type) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericUnserializeMethodName(type))
-                .returns(TypeName.get(type))
-                .addParameter(byteBuf, "buf");
+            .returns(TypeName.get(type))
+            .addParameter(byteBuf, "buf");
 
         builder.addStatement("return $T.values()[buf.readByte()]", type);
         return builder.build();
@@ -132,17 +132,17 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec concreticSerializer(TypeElement element, DeclaredType type) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getConcreticSerializeMethodName(type))
-                .returns(void.class)
-                .addParameter(TypeName.get(type), "value")
-                .addParameter(byteBuf, "acc");
+            .returns(void.class)
+            .addParameter(TypeName.get(type), "value")
+            .addParameter(byteBuf, "acc");
 
         if (haveSerializationOverride(type))
             builder.addStatement("value.serialize(acc)");
         else {
             Function<TypeMirror, TypeMirror> refine = refineParameterizedTypes(type);
             for (VariableElement field : Stream.concat(
-                    getSerializableFinalFields(element),
-                    getSerializableNonFinalFields(element)
+                getSerializableFinalFields(element),
+                getSerializableNonFinalFields(element)
             ).collect(toList()))
                 builder.addStatement(getGenericSerializeMethodName(refine.apply(field.asType())) + "($L, acc)", getFieldGetAccess(type, field));
         }
@@ -154,14 +154,14 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
         Function<TypeMirror, TypeMirror> refine = refineParameterizedTypes(type);
 
         List<TypeMirror> finalFields = getSerializableFinalFields(element)
-                .map(Element::asType)
-                .map(refine)
-                .collect(toList());
+            .map(Element::asType)
+            .map(refine)
+            .collect(toList());
         List<VariableElement> mutableFields = getSerializableNonFinalFields(element).collect(toList());
 
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getConcreticUnserializeMethodName(type))
-                .returns(TypeName.get(type))
-                .addParameter(byteBuf, "buf");
+            .returns(TypeName.get(type))
+            .addParameter(byteBuf, "buf");
 
         if (haveSerializationOverride(type))
             builder.addStatement("return new $T(buf)", type);
@@ -207,49 +207,49 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private List<Map.Entry<DeclaredType, AbstractGenerator>> getSpecialBaseTypes(DeclaredType declaredType) {
         return specials.entrySet().stream()
-                .map(leftMapper(elementUtils::getTypeElement))
-                .filter(e -> e.getKey() != null)
-                .map(leftMapper(Element::asType))
-                .map(leftMapper(typeUtils::erasure))
-                .map(leftMapper(t -> (DeclaredType) t))
-                .filter(t -> typeUtils.isSubtype(typeUtils.erasure(declaredType), t.getKey()))
-                .collect(toList());
+            .map(leftMapper(elementUtils::getTypeElement))
+            .filter(e -> e.getKey() != null)
+            .map(leftMapper(Element::asType))
+            .map(leftMapper(typeUtils::erasure))
+            .map(leftMapper(t -> (DeclaredType) t))
+            .filter(t -> typeUtils.isSubtype(typeUtils.erasure(declaredType), t.getKey()))
+            .collect(toList());
     }
 
     private Stream<VariableElement> getSerializableFinalFields(TypeElement element) {
         return getSerializableFields(element)
-                .filter(this::isFinal);
+            .filter(this::isFinal);
     }
 
     private Stream<VariableElement> getSerializableNonFinalFields(TypeElement element) {
         return getSerializableFields(element)
-                .filter(f -> !isFinal(f));
+            .filter(f -> !isFinal(f));
     }
 
     private Stream<VariableElement> getSerializableFields(TypeElement element) {
         return getFields(element)
-                .filter(f -> !f.getModifiers().contains(TRANSIENT) && !f.getModifiers().contains(STATIC));
+            .filter(f -> !f.getModifiers().contains(TRANSIENT) && !f.getModifiers().contains(STATIC));
     }
 
 
     public boolean haveSerializationOverride(DeclaredType type) {
         return new InheritanceUtils(typeUtils).getAllInterfaces(type).anyMatch(e -> typeUtils.asElement(e) == elementUtils.getTypeElement(IByteBufSerializable_name)) &&
-                elementUtils.getAllMembers((TypeElement) type.asElement())
-                        .stream().anyMatch(e -> {
-                            if (e.getKind() == CONSTRUCTOR) {
-                                List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
-                                return (parameterTypes.size() == 1 && typeUtils.asElement(parameterTypes.get(0)) == elementUtils.getTypeElement(byteBuf.canonicalName()));
-                            } else
-                                return false;
-                        });
+            elementUtils.getAllMembers((TypeElement) type.asElement())
+                .stream().anyMatch(e -> {
+                    if (e.getKind() == CONSTRUCTOR) {
+                        List<? extends TypeMirror> parameterTypes = ((ExecutableType) e.asType()).getParameterTypes();
+                        return (parameterTypes.size() == 1 && typeUtils.asElement(parameterTypes.get(0)) == elementUtils.getTypeElement(byteBuf.canonicalName()));
+                    } else
+                        return false;
+                });
     }
 
     private MethodSpec genericSingleSerializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericSerializeMethodName(type))
-                .returns(void.class)
-                .addParameter(TypeName.get(type), "value")
-                .addParameter(byteBuf, "acc");
-
+            .returns(void.class)
+            .addParameter(TypeName.get(type), "value")
+            .addParameter(byteBuf, "acc");
+        
         builder.addStatement(getConcreticSerializeMethodName(implementations.get(0)) + "(value, acc)");
 
         return builder.build();
@@ -257,9 +257,9 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec genericSerializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericSerializeMethodName(type))
-                .returns(void.class)
-                .addParameter(TypeName.get(type), "value")
-                .addParameter(byteBuf, "acc");
+            .returns(void.class)
+            .addParameter(TypeName.get(type), "value")
+            .addParameter(byteBuf, "acc");
 
         builder.beginControlFlow("if (false) ");
         builder.addStatement("return");
@@ -280,8 +280,8 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec genericSingleUnserializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericUnserializeMethodName(type))
-                .returns(TypeName.get(type))
-                .addParameter(byteBuf, "buf");
+            .returns(TypeName.get(type))
+            .addParameter(byteBuf, "buf");
 
         builder.addStatement("return " + getConcreticUnserializeMethodName(implementations.get(0)) + "(buf)");
 
@@ -290,8 +290,8 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec genericUnserializer(TypeElement element, DeclaredType type, List<DeclaredType> implementations) {
         MethodSpec.Builder builder = MethodSpec.methodBuilder(getGenericUnserializeMethodName(type))
-                .returns(TypeName.get(type))
-                .addParameter(byteBuf, "buf");
+            .returns(TypeName.get(type))
+            .addParameter(byteBuf, "buf");
 
         builder.addStatement("byte concreteIndex = buf.readByte()");
 
@@ -314,54 +314,54 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
     JavaFile generateSerializerClass(TypeElement e, List<MethodSpec> serializationMethods) {
         ClassName packet = ClassName.get(e);
         TypeSpec serializer = TypeSpec.classBuilder(e.getSimpleName() + "Serializer")
-                .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(SerializerMark_name))).addMember("packetClass", packet.canonicalName() + ".class").build())
-                .addModifiers(PUBLIC)
-                .addSuperinterface(ParameterizedTypeName.get(ClassName.get(elementUtils.getTypeElement(ISerializer_name)), packet))
-                .addMethod(generateMainSerializeMethod(e, packet))
-                .addMethod(generateMainUnserializeMethod(e, packet))
-                .addMethods(serializationMethods)
-                .build();
+            .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(SerializerMark_name))).addMember("packetClass", packet.canonicalName() + ".class").build())
+            .addModifiers(PUBLIC)
+            .addSuperinterface(ParameterizedTypeName.get(ClassName.get(elementUtils.getTypeElement(ISerializer_name)), packet))
+            .addMethod(generateMainSerializeMethod(e, packet))
+            .addMethod(generateMainUnserializeMethod(e, packet))
+            .addMethods(serializationMethods)
+            .build();
 
         return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), serializer).build();
     }
 
     private MethodSpec generateMainSerializeMethod(TypeElement typeElement, ClassName packet) {
         MethodSpec.Builder serialize = MethodSpec.methodBuilder("serialize")
-                .addModifiers(PUBLIC);
+            .addModifiers(PUBLIC);
 
         serialize
-                .returns(void.class)
-                .addParameter(packet, "value")
-                .addParameter(byteBuf, "acc");
+            .returns(void.class)
+            .addParameter(packet, "value")
+            .addParameter(byteBuf, "acc");
 
         serialize
-                .addStatement(getGenericSerializeMethodName(typeElement.asType()) + "(value, acc)");
+            .addStatement(getGenericSerializeMethodName(typeElement.asType()) + "(value, acc)");
 
         return serialize.build();
     }
 
     private MethodSpec generateMainUnserializeMethod(TypeElement typeElement, ClassName packet) {
         MethodSpec.Builder unserialize = MethodSpec.methodBuilder("unserialize")
-                .addModifiers(PUBLIC);
+            .addModifiers(PUBLIC);
 
         unserialize
-                .returns(packet)
-                .addParameter(byteBuf, "buf");
+            .returns(packet)
+            .addParameter(byteBuf, "buf");
 
         unserialize
-                .addStatement("return " + getGenericUnserializeMethodName(typeElement.asType()) + "(buf)");
+            .addStatement("return " + getGenericUnserializeMethodName(typeElement.asType()) + "(buf)");
 
         return unserialize.build();
     }
 
     public JavaFile generatePacketProvider(TypeElement e, String modid) {
         TypeSpec provider = TypeSpec.classBuilder(e.getSimpleName() + "Provider")
-                .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(PacketProviderMark_name))).build())
-                .addModifiers(PUBLIC)
-                .addSuperinterface(ClassName.get(elementUtils.getTypeElement(IPacketProvider_name)))
-                .addMethod(generatePacketClassGetterMethod(e))
-                .addMethod(generateModidGetterMethod(modid))
-                .build();
+            .addAnnotation(AnnotationSpec.builder(ClassName.get(elementUtils.getTypeElement(PacketProviderMark_name))).build())
+            .addModifiers(PUBLIC)
+            .addSuperinterface(ClassName.get(elementUtils.getTypeElement(IPacketProvider_name)))
+            .addMethod(generatePacketClassGetterMethod(e))
+            .addMethod(generateModidGetterMethod(modid))
+            .build();
 
         return JavaFile.builder(elementUtils.getPackageOf(e).getQualifiedName().toString(), provider).build();
 
@@ -369,18 +369,18 @@ public class CodeGenerator implements ICodeGenerator, AccessUtils, MethodNames, 
 
     private MethodSpec generateModidGetterMethod(String modid) {
         return MethodSpec.methodBuilder("modid")
-                .addModifiers(PUBLIC)
-                .returns(String.class)
-                .addStatement("return $S", modid)
-                .build();
+            .addModifiers(PUBLIC)
+            .returns(String.class)
+            .addStatement("return $S", modid)
+            .build();
     }
 
     private MethodSpec generatePacketClassGetterMethod(TypeElement e) {
         return MethodSpec.methodBuilder("getPacketClass")
-                .addModifiers(PUBLIC)
-                .returns(ParameterizedTypeName.get(ClassName.get(Class.class), WildcardTypeName.subtypeOf(ClassName.get(elementUtils.getTypeElement(IByteBufSerializable_name)))))
-                .addStatement("return $L.class", e.getQualifiedName())
-                .build();
+            .addModifiers(PUBLIC)
+            .returns(ParameterizedTypeName.get(ClassName.get(Class.class), WildcardTypeName.subtypeOf(ClassName.get(elementUtils.getTypeElement(IByteBufSerializable_name)))))
+            .addStatement("return $L.class", e.getQualifiedName())
+            .build();
 
     }
 }
